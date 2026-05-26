@@ -7,29 +7,37 @@ A monorepo containing the Next.js web app and Sanity Studio for content manageme
 | Layer | Tech |
 |---|---|
 | Frontend | Next.js 16 (App Router) |
-| Styling | Tailwind CSS |
+| Styling | Tailwind CSS v4 |
 | CMS | Sanity Studio v5 |
+| Routing | Locale-prefixed (`/[locale]/...`) via Next.js 16 `proxy` |
 | Deployment | Vercel (web) · Sanity Hosting (studio) |
 
 ## Structure
 
 ```
 apps/
-├── web/        # Next.js frontend
+├── web/                              # Next.js frontend
 │   ├── src/
+│   │   ├── proxy.js                  # Locale redirect (Next 16 renamed middleware → proxy)
+│   │   ├── i18n/                     # Localization scaffold (lightweight, no library)
+│   │   │   ├── config.js             # LOCALES, DEFAULT_LOCALE, RTL_LOCALES
+│   │   │   ├── utils.js              # isValidLocale, getLocaleFromPathname, ...
+│   │   │   └── routing.js            # localizedPath, replaceLocale
 │   │   ├── app/
-│   │   │   ├── page.js          # Landing page
-│   │   │   ├── layout.js        # Root layout (Navbar + Footer)
-│   │   │   └── blog/
-│   │   │       ├── page.js      # Blog listing
-│   │   │       └── [slug]/      # Blog post detail
-│   │   ├── components/          # UI components
-│   │   └── sanity/lib/          # Sanity client
+│   │   │   ├── globals.css
+│   │   │   └── [locale]/             # Every page lives under the locale segment
+│   │   │       ├── layout.js         # Root layout (sets <html lang>/dir)
+│   │   │       ├── page.js           # Landing page
+│   │   │       └── blog/
+│   │   │           ├── page.js       # Blog listing
+│   │   │           └── [slug]/       # Blog post detail
+│   │   ├── components/               # UI components (Navbar/Footer take a locale prop)
+│   │   └── sanity/lib/               # Sanity client
 │   └── .env.example
-└── studio/     # Sanity Studio
+└── studio/                           # Sanity Studio
     └── schemaTypes/
-        ├── blogPost.ts          # Blog post schema
-        └── faqItem.ts           # FAQ schema
+        ├── blogPost.ts               # Blog post schema
+        └── faqItem.ts                # FAQ schema
 ```
 
 ## Getting Started
@@ -39,6 +47,8 @@ Install all dependencies from the root:
 ```bash
 npm install
 ```
+
+> You'll see a few `npm warn deprecated` lines during install (`uuid@8`, `uuid@10`, `whatwg-encoding@3`) and a `mute-stream@4` engine warning. These all come from Sanity CLI's transitive deps — they're cosmetic, do not affect build or runtime, and will go away when Sanity publishes updates upstream.
 
 Copy the env file and fill in your Sanity credentials:
 
@@ -56,12 +66,24 @@ cp apps/web/.env.example apps/web/.env.local
 Run apps:
 
 ```bash
-# Next.js — http://localhost:3000
+# Next.js — http://localhost:3000  (proxy redirects "/" → "/en")
 npm run dev:web
 
 # Sanity Studio — http://localhost:3333
 npm run dev:studio
 ```
+
+## Localization
+
+Routing is locale-prefixed from day one. The MVP serves English only, but adding a locale is purely additive:
+
+1. Open `apps/web/src/i18n/config.js`
+2. Add the new code to `LOCALES`: e.g. `['en', 'fr']`
+3. (Optional) Add a `LOCALE_LABELS` entry and, for RTL languages, push to `RTL_LOCALES`
+
+The proxy, layout, and link helpers (`localizedPath`, `replaceLocale`) pick the new locale up automatically — routes like `/fr/blog/my-post` will start working immediately. Translation strings and CMS-side language fields are left as project decisions; the routing scaffold doesn't lock you to any i18n library.
+
+See [`AGENT_BLUEPRINT.md`](AGENT_BLUEPRINT.md) for the full localization architecture (config, helpers, proxy, layout).
 
 ## Sanity Content
 

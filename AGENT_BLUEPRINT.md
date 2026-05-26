@@ -14,6 +14,7 @@ A production-ready landing page + blog monorepo with:
 - **Footer** — 4-column links + brand + social icons (X, LinkedIn, GitHub, YouTube)
 - **Sanity Studio** — `faqItem` and `blogPost` schemas registered and ready
 - **Color system** — 3 CSS variables retheme the entire app instantly
+- **Locale-prefixed routing** — every page lives under `[locale]`, English-only for MVP, additional locales are a one-line change. Uses Next.js 16's `proxy` (renamed from `middleware`).
 
 ---
 
@@ -61,17 +62,23 @@ monorepo/
         ├── package.json
         ├── postcss.config.mjs
         └── src/
+            ├── proxy.js                     ← Next.js 16 proxy (was middleware.js)
+            ├── i18n/
+            │   ├── config.js                ← LOCALES, DEFAULT_LOCALE, RTL_LOCALES
+            │   ├── utils.js                 ← locale guards / extractors
+            │   └── routing.js               ← localizedPath, replaceLocale
             ├── app/
             │   ├── globals.css
-            │   ├── layout.js
-            │   ├── page.js
-            │   └── blog/
+            │   └── [locale]/                ← every route lives under here
+            │       ├── layout.js            ← root layout (owns <html>/<body>)
             │       ├── page.js
-            │       └── [slug]/
-            │           └── page.js
+            │       └── blog/
+            │           ├── page.js
+            │           └── [slug]/
+            │               └── page.js
             ├── components/
-            │   ├── Navbar.js
-            │   ├── Footer.js
+            │   ├── Navbar.js                ← takes a `locale` prop
+            │   ├── Footer.js                ← takes a `locale` prop
             │   ├── Hero.js
             │   ├── Section1.js
             │   ├── Section2.js
@@ -161,32 +168,57 @@ export default nextConfig;
 }
 ```
 
-### `apps/web/src/app/layout.js`
+### `apps/web/src/app/[locale]/layout.js`
+
+This IS the root layout — it owns `<html>` and `<body>`. There is no `app/layout.js`; every route is nested under `[locale]` and the proxy ensures requests always reach it through there.
 
 ```js
-import './globals.css'
-import Navbar  from '@/components/Navbar'
-import Footer  from '@/components/Footer'
+import { notFound } from 'next/navigation'
+import '../globals.css'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
+import { LOCALES } from '@/i18n/config'
+import { isValidLocale, isRtlLocale } from '@/i18n/utils'
 
 export const metadata = {
   title: 'YourBrand',
   description: 'Placeholder app description',
 }
 
-export default function RootLayout({ children }) {
+// Tell Next.js which locale folders to prerender at build time.
+// Returns [{ locale: 'en' }] today; grows automatically with LOCALES.
+export function generateStaticParams() {
+  return LOCALES.map((locale) => ({ locale }))
+}
+
+export default async function LocaleLayout({ children, params }) {
+  // Next.js 15+: params is async.
+  const { locale } = await params
+
+  // Defensive 404: proxy already rejects unknown locales, but if a request
+  // reaches this layout with a junk value (stale cached link, manual typing,
+  // bypassed proxy in a test) we want a clean 404 rather than rendering with
+  // garbage.
+  if (!isValidLocale(locale)) notFound()
+
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-white text-slate-900 font-sans antialiased">
-        <Navbar />
+    <html lang={locale} dir={isRtlLocale(locale) ? 'rtl' : 'ltr'}>
+      <body
+        suppressHydrationWarning
+        className="min-h-screen bg-white text-slate-900 font-sans antialiased"
+      >
+        <Navbar locale={locale} />
         {children}
-        <Footer />
+        <Footer locale={locale} />
       </body>
     </html>
   )
 }
 ```
 
-### `apps/web/src/app/page.js`
+`suppressHydrationWarning` on `<body>` silences false positives from browser extensions (Grammarly, Dark Reader) that inject attributes after hydration.
+
+### `apps/web/src/app/[locale]/page.js`
 
 ```js
 import Hero         from '@/components/Hero'
@@ -212,16 +244,217 @@ export default function Home() {
 
 ### `apps/web/src/sanity/lib/client.js`
 
+The client falls back to a no-op `fetch` stub if `NEXT_PUBLIC_SANITY_PROJECT_ID` is missing — that keeps Vercel builds green even before env vars are set.
+
 ```js
 import { createClient } from 'next-sanity'
 
-export const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET,
-  apiVersion: process.env.NEXT_PUBLIC_SANITY_API_VERSION,
-  useCdn: true,
-})
+const projectId  = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+const dataset    = process.env.NEXT_PUBLIC_SANITY_DATASET    || 'production'
+const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2025-01-01'
+
+// Only create the client if env vars are present. Otherwise export a stub
+// whose fetch() resolves to [] so builds don't crash when Sanity isn't
+// configured (e.g. on Vercel before env vars are set).
+export const client = projectId
+  ? createClient({ projectId, dataset, apiVersion, useCdn: true })
+  : { fetch: async () => [] }
 ```
+
+---
+
+## Localization architecture
+
+The site is localization-ready from day one: every route lives under `[locale]`, links go through a path helper, and a proxy redirects un-prefixed requests to the default locale. **Only English is active in the MVP** — no translation files, no i18n library. Adding a locale later is purely additive (see "Add a new locale" in the customisation guide).
+
+### `apps/web/src/i18n/config.js`
+
+Single source of truth for which locales the app supports. When adding a new locale, this is the only file that must be edited.
+
+```js
+// ============================================================================
+// i18n configuration — single source of truth
+// ----------------------------------------------------------------------------
+// To enable a new locale later:
+//   1. Add its code to LOCALES below (e.g. 'fr').
+//   2. Add a human-readable label to LOCALE_LABELS.
+//   3. If it reads right-to-left, add it to RTL_LOCALES.
+// Nothing else needs to change — proxy, layout, helpers all read from
+// this file and adapt automatically.
+//
+// Only 'en' is active during the MVP. The rest are listed in LOCALE_LABELS
+// for reference but are NOT in LOCALES, so the proxy will not route to
+// them yet.
+// ============================================================================
+
+/**
+ * @typedef {(typeof LOCALES)[number]} Locale
+ * Compile-time union of every active locale code. Editor IntelliSense and
+ * `tsc --checkJs` narrow this automatically — when LOCALES grows, Locale grows.
+ */
+
+/** Active locales the site currently serves. */
+export const LOCALES = /** @type {const} */ (['en'])
+
+/** Fallback used when no locale can be detected or an invalid one is requested. */
+export const DEFAULT_LOCALE = 'en'
+
+/** Display names used by future locale switcher UIs. */
+export const LOCALE_LABELS = {
+  en: 'English',
+  fr: 'Français',
+  de: 'Deutsch',
+  ar: 'العربية',
+}
+
+/** Locales that render right-to-left. Drives the <html dir> attribute. */
+export const RTL_LOCALES = ['ar']
+```
+
+### `apps/web/src/i18n/utils.js`
+
+Pure helpers. Safe to call from Edge proxy, server components, and client components alike.
+
+```js
+import { LOCALES, DEFAULT_LOCALE, RTL_LOCALES } from './config'
+
+/**
+ * Type guard: does the given value match a currently-active locale?
+ * @param {unknown} value
+ * @returns {value is import('./config').Locale}
+ */
+export function isValidLocale(value) {
+  return typeof value === 'string' && LOCALES.includes(/** @type {any} */ (value))
+}
+
+/**
+ * Extract the locale segment from a pathname. Returns null if missing/invalid.
+ *   getLocaleFromPathname('/en/blog/foo') => 'en'
+ *   getLocaleFromPathname('/blog/foo')    => null
+ * @param {string} pathname
+ */
+export function getLocaleFromPathname(pathname) {
+  const segment = pathname.split('/')[1]
+  return isValidLocale(segment) ? segment : null
+}
+
+/** Does this locale render right-to-left? */
+export function isRtlLocale(locale) {
+  return RTL_LOCALES.includes(locale)
+}
+
+/**
+ * Coerce any value into a usable locale, falling back to DEFAULT_LOCALE.
+ * Useful at boundaries (route params, query strings, cookies) where the
+ * incoming value isn't yet trusted.
+ */
+export function resolveLocale(value) {
+  return isValidLocale(value) ? value : DEFAULT_LOCALE
+}
+```
+
+### `apps/web/src/i18n/routing.js`
+
+Anything that builds an internal URL should go through `localizedPath()`. That keeps URLs canonical (no extra proxy redirect on click) and makes future locale switchers trivial — just call `replaceLocale(pathname, nextLocale)`.
+
+```js
+import { DEFAULT_LOCALE } from './config'
+
+/**
+ * Build a locale-prefixed href.
+ *   localizedPath('en', '/blog')        => '/en/blog'
+ *   localizedPath('en', '/')            => '/en'
+ *   localizedPath('en', '/#section1')   => '/en#section1'
+ *   localizedPath('en', 'blog')         => '/en/blog'   (leading slash optional)
+ *
+ * @param {string} locale
+ * @param {string} path
+ */
+export function localizedPath(locale = DEFAULT_LOCALE, path = '/') {
+  if (!path.startsWith('/')) path = `/${path}`
+  if (path === '/') return `/${locale}`
+  if (path.startsWith('/#') || path.startsWith('/?')) return `/${locale}${path.slice(1)}`
+  return `/${locale}${path}`
+}
+
+/**
+ * Swap the locale prefix on an existing pathname.
+ *   replaceLocale('/en/blog', 'fr') => '/fr/blog'
+ * Used by locale-switcher UIs once additional locales are enabled.
+ *
+ * @param {string} pathname
+ * @param {string} nextLocale
+ */
+export function replaceLocale(pathname, nextLocale) {
+  const parts = pathname.split('/')
+  if (parts.length < 2) return `/${nextLocale}`
+  parts[1] = nextLocale
+  return parts.join('/') || `/${nextLocale}`
+}
+```
+
+### `apps/web/src/proxy.js`
+
+Next.js 16 deprecated the `middleware` file convention and renamed it `proxy`. **Same Edge runtime, same matcher syntax, same `NextResponse` API** — just a different filename and exported function name. The build prints a deprecation warning if you keep using `middleware.js`.
+
+```js
+// ============================================================================
+// Locale proxy (Next.js 16's renamed middleware)
+// ----------------------------------------------------------------------------
+// Lives at /src/proxy.js. Next.js 16 deprecated the `middleware` file
+// convention in favor of `proxy` — same runtime, same Edge environment, same
+// matcher syntax. The exported function must be named `proxy` (or default).
+//
+// Runs on every request that isn't a Next.js internal asset or API route
+// (see `matcher` below). Two responsibilities:
+//
+//   1. If the first path segment is an active locale, do nothing — the
+//      request proceeds to /app/[locale]/... as written.
+//   2. Otherwise, redirect to the same path under DEFAULT_LOCALE.
+//        /            -> /en
+//        /blog        -> /en/blog
+//        /blog/foo    -> /en/blog/foo
+//
+// Once new codes are added to LOCALES (e.g. 'fr'), this same logic routes
+// '/fr/...' correctly with no edits. To layer in Accept-Language detection
+// later, extend pickLocale() — keep the rest as-is.
+// ============================================================================
+
+import { NextResponse } from 'next/server'
+import { LOCALES, DEFAULT_LOCALE } from './i18n/config'
+
+/**
+ * Decide which locale to redirect an un-prefixed request to.
+ * MVP: always DEFAULT_LOCALE. Future hook: read accept-language, cookies, etc.
+ */
+function pickLocale(/* request */) {
+  return DEFAULT_LOCALE
+}
+
+export function proxy(request) {
+  const { pathname } = request.nextUrl
+
+  const hasLocalePrefix = LOCALES.some(
+    (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
+  )
+  if (hasLocalePrefix) return
+
+  const locale = pickLocale(request)
+  const url = request.nextUrl.clone()
+  url.pathname = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`
+  return NextResponse.redirect(url)
+}
+
+export const config = {
+  // Skip Next internals, the api/ tree, and any path that looks like a file
+  // (has an extension — favicon.ico, robots.txt, sitemap.xml, images, etc).
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+}
+```
+
+### Why JSDoc instead of TypeScript
+
+The web app is JavaScript. Adding three `.ts` files for i18n would bolt a TypeScript toolchain onto a JS project for almost no return. JSDoc with `@typedef` and `(typeof LOCALES)[number]` gives the same compile-time narrowing in editors and `tsc --checkJs` without changing build config.
 
 ---
 
@@ -229,21 +462,24 @@ export const client = createClient({
 
 ### `apps/web/src/components/Navbar.js`
 
+Receives `locale` as a prop from the root layout and builds every internal href through `localizedPath()` so links never bypass the `[locale]` segment. Plain `<a>` tags are used for in-page anchors so the browser handles hash scrolling natively across pages.
+
 ```jsx
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { localizedPath } from '@/i18n/routing'
 
-const NAV_LINKS = [
-  { label: 'Home',      href: '/' },
-  { label: 'Blog',      href: '/blog' },
-  { label: 'Section 1', href: '/#section1' },
-  { label: 'Section 2', href: '/#section2' },
-  { label: 'Section 3', href: '/#section3' },
-]
-
-export default function Navbar() {
+export default function Navbar({ locale }) {
   const [open, setOpen] = useState(false)
+
+  const links = [
+    { label: 'Home',      href: localizedPath(locale, '/') },
+    { label: 'Blog',      href: localizedPath(locale, '/blog') },
+    { label: 'Section 1', href: localizedPath(locale, '/#section1') },
+    { label: 'Section 2', href: localizedPath(locale, '/#section2') },
+    { label: 'Section 3', href: localizedPath(locale, '/#section3') },
+  ]
 
   return (
     <nav className="sticky top-0 z-50 bg-secondary border-b border-tertiary">
@@ -251,14 +487,14 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+          <Link href={localizedPath(locale, '/')} className="flex items-center gap-2.5 shrink-0">
             <div className="w-8 h-8 bg-primary rounded-md" />
             <span className="text-white font-bold text-lg tracking-tight">YourBrand</span>
           </Link>
 
           {/* Desktop links — plain <a> tags so browser handles hash scrolling natively */}
           <div className="hidden md:flex items-center gap-7">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
@@ -301,7 +537,7 @@ export default function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden bg-secondary border-t border-tertiary px-4 pb-4 pt-2 space-y-1">
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <a
               key={link.href}
               href={link.href}
@@ -331,46 +567,49 @@ export default function Navbar() {
 
 ### `apps/web/src/components/Footer.js`
 
+Receives `locale` from the root layout. Real internal hrefs go through `localizedPath()`; placeholder columns (About / Careers / Terms etc.) keep `href="#"` since they aren't real routes yet.
+
 ```jsx
 import Link from 'next/link'
+import { localizedPath } from '@/i18n/routing'
 
-const FOOTER_COLS = [
-  {
-    heading: 'Navigate',
-    links: [
-      { label: 'Section 1', href: '/#section1' },
-      { label: 'Section 2', href: '/#section2' },
-      { label: 'Section 3', href: '/#section3' },
-      { label: 'Blog',      href: '/blog' },
-    ],
-  },
-  {
-    heading: 'Company',
-    links: [
-      { label: 'About',   href: '#' },
-      { label: 'Careers', href: '#' },
-      { label: 'Press',   href: '#' },
-    ],
-  },
-  {
-    heading: 'Support',
-    links: [
-      { label: 'Help Centre', href: '#' },
-      { label: 'Contact',     href: '#' },
-      { label: 'Status',      href: '#' },
-    ],
-  },
-  {
-    heading: 'Legal',
-    links: [
-      { label: 'Terms',   href: '#' },
-      { label: 'Privacy', href: '#' },
-      { label: 'Cookies', href: '#' },
-    ],
-  },
-]
+export default function Footer({ locale }) {
+  const FOOTER_COLS = [
+    {
+      heading: 'Navigate',
+      links: [
+        { label: 'Section 1', href: localizedPath(locale, '/#section1') },
+        { label: 'Section 2', href: localizedPath(locale, '/#section2') },
+        { label: 'Section 3', href: localizedPath(locale, '/#section3') },
+        { label: 'Blog',      href: localizedPath(locale, '/blog') },
+      ],
+    },
+    {
+      heading: 'Company',
+      links: [
+        { label: 'About',   href: '#' },
+        { label: 'Careers', href: '#' },
+        { label: 'Press',   href: '#' },
+      ],
+    },
+    {
+      heading: 'Support',
+      links: [
+        { label: 'Help Centre', href: '#' },
+        { label: 'Contact',     href: '#' },
+        { label: 'Status',      href: '#' },
+      ],
+    },
+    {
+      heading: 'Legal',
+      links: [
+        { label: 'Terms',   href: '#' },
+        { label: 'Privacy', href: '#' },
+        { label: 'Cookies', href: '#' },
+      ],
+    },
+  ]
 
-export default function Footer() {
   return (
     <footer className="bg-secondary text-slate-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
@@ -379,7 +618,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 pb-12 border-b border-tertiary">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="inline-flex items-center gap-2 mb-4">
+            <Link href={localizedPath(locale, '/')} className="inline-flex items-center gap-2 mb-4">
               <div className="w-7 h-7 bg-primary rounded-md" />
               <span className="text-white font-bold text-base">YourBrand</span>
             </Link>
@@ -839,14 +1078,15 @@ export default function FAQAccordion({ faqs }) {
 
 ## File contents — blog pages
 
-### `apps/web/src/app/blog/page.js`
+### `apps/web/src/app/[locale]/blog/page.js`
 
-Async server component. Fetches all published posts ordered newest-first.
+Async server component. Fetches all published posts ordered newest-first. Reads `locale` from `params` to build locale-prefixed "Read more" links. Renders dynamically (`force-dynamic`) so the build never depends on Sanity being reachable; `try/catch` falls back to an empty list if the fetch fails.
 
 ```jsx
 import Link from 'next/link'
 import Image from 'next/image'
 import { client } from '@/sanity/lib/client'
+import { localizedPath } from '@/i18n/routing'
 
 const POSTS_QUERY = `*[_type == "blogPost"] | order(publishedAt desc) {
   _id, title, slug, category, excerpt, publishedAt,
@@ -858,8 +1098,17 @@ export const metadata = {
   description: 'Placeholder blog page',
 }
 
-export default async function BlogPage() {
-  const posts = await client.fetch(POSTS_QUERY, {}, { next: { revalidate: 60 } })
+export const dynamic = 'force-dynamic'
+
+export default async function BlogPage({ params }) {
+  const { locale } = await params
+
+  let posts = []
+  try {
+    posts = await client.fetch(POSTS_QUERY, {}, { next: { revalidate: 60 } })
+  } catch {
+    posts = []
+  }
 
   return (
     <main className="min-h-screen bg-white py-20">
@@ -906,7 +1155,7 @@ export default async function BlogPage() {
                   {post.excerpt}
                 </p>
                 <Link
-                  href={`/blog/${post.slug.current}`}
+                  href={localizedPath(locale, `/blog/${post.slug.current}`)}
                   className="text-primary text-sm font-medium hover:underline"
                 >
                   Read more →
@@ -921,15 +1170,16 @@ export default async function BlogPage() {
 }
 ```
 
-### `apps/web/src/app/blog/[slug]/page.js`
+### `apps/web/src/app/[locale]/blog/[slug]/page.js`
 
-Dynamic detail page. Awaits `params` (required in Next.js 15+). Renders portable text body blocks.
+Dynamic detail page. Both `locale` and `slug` come from `params` (await it — required in Next.js 15+). Renders portable text body blocks. `generateStaticParams` is wrapped in try/catch so Vercel builds still succeed if Sanity is unreachable.
 
 ```jsx
 import { client } from '@/sanity/lib/client'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { localizedPath } from '@/i18n/routing'
 
 const POST_QUERY = `*[_type == "blogPost" && slug.current == $slug][0] {
   _id, title, slug, category, excerpt, publishedAt, body,
@@ -938,14 +1188,25 @@ const POST_QUERY = `*[_type == "blogPost" && slug.current == $slug][0] {
 
 const ALL_SLUGS_QUERY = `*[_type == "blogPost"] { "slug": slug.current }`
 
+export const dynamic = 'force-dynamic'
+
 export async function generateStaticParams() {
-  const posts = await client.fetch(ALL_SLUGS_QUERY)
-  return posts.map((post) => ({ slug: post.slug }))
+  try {
+    const posts = await client.fetch(ALL_SLUGS_QUERY)
+    return posts.map((post) => ({ slug: post.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
-  const post = await client.fetch(POST_QUERY, { slug })
+  let post = null
+  try {
+    post = await client.fetch(POST_QUERY, { slug })
+  } catch {
+    post = null
+  }
   if (!post) return {}
   return { title: `${post.title} | YourBrand`, description: post.excerpt }
 }
@@ -968,15 +1229,20 @@ function renderBody(body) {
 }
 
 export default async function BlogPostPage({ params }) {
-  const { slug } = await params
-  const post = await client.fetch(POST_QUERY, { slug }, { next: { revalidate: 60 } })
+  const { locale, slug } = await params
+  let post = null
+  try {
+    post = await client.fetch(POST_QUERY, { slug }, { next: { revalidate: 60 } })
+  } catch {
+    post = null
+  }
   if (!post) notFound()
 
   return (
     <main className="min-h-screen bg-white py-20">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <Link href="/blog" className="text-primary text-sm font-medium hover:underline inline-flex items-center gap-1 mb-8">
+        <Link href={localizedPath(locale, '/blog')} className="text-primary text-sm font-medium hover:underline inline-flex items-center gap-1 mb-8">
           ← Back to Blog
         </Link>
 
@@ -1141,11 +1407,15 @@ export const schemaTypes = [faqItem, blogPost]
 
 ## Routing map
 
+The proxy redirects un-prefixed paths (`/`, `/blog`, ...) to `/<DEFAULT_LOCALE>/...` (currently `/en/...`). Every actual route file lives under `[locale]`.
+
 | URL | File | Type | Data source |
 |---|---|---|---|
-| `/` | `src/app/page.js` | Server | Static + Sanity (FAQ) |
-| `/blog` | `src/app/blog/page.js` | Server | Sanity (`blogPost`) |
-| `/blog/[slug]` | `src/app/blog/[slug]/page.js` | Server | Sanity (`blogPost`) |
+| `/` | (proxy redirect to `/en`) | — | — |
+| `/blog` | (proxy redirect to `/en/blog`) | — | — |
+| `/en` | `src/app/[locale]/page.js` | SSG | Static + Sanity (FAQ) |
+| `/en/blog` | `src/app/[locale]/blog/page.js` | Dynamic | Sanity (`blogPost`) |
+| `/en/blog/[slug]` | `src/app/[locale]/blog/[slug]/page.js` | Dynamic | Sanity (`blogPost`) |
 
 ---
 
@@ -1156,7 +1426,7 @@ Edit the 3 variables in `globals.css` `@theme` block. Nothing else needs changin
 
 ### Rename sections
 1. Update the `id` attribute on the `<section>` element
-2. Update the matching `href` in `NAV_LINKS` in `Navbar.js` and in `FOOTER_COLS` in `Footer.js`
+2. Update the matching `href` in `links` in `Navbar.js` and in `FOOTER_COLS` in `Footer.js` (use `localizedPath(locale, '/#newId')`)
 
 ### Replace placeholder text
 All hardcoded copy (hero heading, section headings, trust signals, testimonials) is in the respective component files. Replace inline.
@@ -1167,10 +1437,27 @@ All hardcoded copy (hero heading, section headings, trust signals, testimonials)
 3. Fetch with `client.fetch(GROQ_QUERY)` in any server component
 
 ### Add a new page
-Create `src/app/my-page/page.js` as an async server component. It shares the same Navbar/Footer from `layout.js` automatically.
+Create `src/app/[locale]/my-page/page.js` as an async server component. It must live under `[locale]`. It shares the same Navbar/Footer from `[locale]/layout.js` automatically. If it has internal links, read `locale` from `params` and build hrefs with `localizedPath(locale, '/somewhere')`.
 
 ### Add sections
-Follow the section layout pattern. Give each section a unique `id`. Add the component to `page.js` and the corresponding link to `Navbar.js` and `Footer.js`.
+Follow the section layout pattern. Give each section a unique `id`. Add the component to `[locale]/page.js` and add a corresponding `localizedPath(locale, '/#newId')` entry to `Navbar.js` and `Footer.js`.
+
+### Add a new locale
+1. In `apps/web/src/i18n/config.js`, add the code to `LOCALES`: e.g. `['en', 'fr']`
+2. (Optional) confirm `LOCALE_LABELS[code]` has a display name
+3. (Optional) if the language is RTL, add the code to `RTL_LOCALES`
+
+That's it for routing — the proxy, layout, link helpers, and `generateStaticParams` all consume `LOCALES` directly and will start serving `/fr/*` immediately. The MVP ships no translation system; pick one when you actually need translated copy. Two common paths:
+
+| Approach | When it fits |
+|---|---|
+| **Static JSON dictionaries** in `src/i18n/messages/{en,fr}.json` + a `getMessages(locale)` helper passed through props or context | Mostly-static UI strings, no per-page CMS overrides |
+| **Locale field on Sanity documents** (e.g. add `language` to `blogPost`, filter GROQ by `language == $locale`) | CMS-driven content where each translation is its own document |
+
+You can also combine: dictionaries for UI chrome, Sanity for content.
+
+### Add Accept-Language detection
+In `apps/web/src/proxy.js`, extend `pickLocale(request)` to read `request.headers.get('accept-language')`, parse the q-values, and pick the best match against `LOCALES`. Fall back to `DEFAULT_LOCALE`. Everything else stays the same.
 
 ---
 
@@ -1178,8 +1465,14 @@ Follow the section layout pattern. Give each section a unique `id`. Add the comp
 
 | Gotcha | Fix |
 |---|---|
-| `params.slug` is undefined | Always `const { slug } = await params` in Next.js 15+ |
-| Navbar anchor links don't scroll from other pages | Use plain `<a href="/#section1">` not `<Link>` |
-| Sanity images not loading | `cdn.sanity.io` must be in `next.config.mjs` `remotePatterns` |
-| `apps/web` missing from `git push` | Nested `.git` in `apps/web` — delete it, then re-add files to parent repo |
-| FAQ/blog shows nothing | Documents must be **published** in Sanity, not just drafted |
+| `params.slug` or `params.locale` is undefined | `params` is async in Next.js 15+. Always `const { locale, slug } = await params`. |
+| Build warns `The "middleware" file convention is deprecated` | Next.js 16 renamed it to `proxy`. Use `src/proxy.js`, export a `proxy` (or default) function. |
+| Navbar anchor links don't scroll from other pages | Use plain `<a>` (not `<Link>`) for hash links. Build hrefs via `localizedPath(locale, '/#sectionId')`. |
+| Sanity images not loading | `cdn.sanity.io` must be in `next.config.mjs` `remotePatterns`. |
+| `apps/web` missing from `git push` | Nested `.git` in `apps/web` — delete it, then re-add files to parent repo. |
+| FAQ/blog shows nothing | Documents must be **published** in Sanity, not just drafted. |
+| Hydration error from `data-new-gr-c-s-check-loaded` etc. | Browser extension (Grammarly, Dark Reader) is injecting attrs on `<body>`. Add `suppressHydrationWarning` on the `<body>` tag in `[locale]/layout.js`. |
+| Vercel build fails: `Cannot find module 'lightningcss.linux-x64-gnu.node'` | Windows-generated lockfile omits Linux native binaries. Pin them in `apps/web/package.json`'s `optionalDependencies` (`lightningcss-linux-x64-gnu`, `@tailwindcss/oxide-linux-x64-gnu`, `@next/swc-linux-x64-gnu`) and reinstall to regenerate the lockfile. |
+| Vercel build fails: `Missing script "build:web"` | Vercel Root Directory is `apps/web`, so it runs the command from there — keep an alias `"build:web": "next build"` in `apps/web/package.json` so it resolves either way. |
+| Vercel build fails when Sanity env vars unset | `client.js` returns a no-op fetch stub when `NEXT_PUBLIC_SANITY_PROJECT_ID` is missing, and blog pages are `force-dynamic` with try/catch fallbacks — preserve those patterns when adding new Sanity-driven pages. |
+| `npm install` shows `deprecated` warnings (`uuid@8`, `uuid@10`, `whatwg-encoding@3`) and a `mute-stream@4` engine warning | All come from Sanity CLI's transitive deps in `apps/studio`. Harmless — they'll clear when Sanity publishes updates. Do not override blindly; `uuid@8` and `uuid@10` have API differences from `uuid@11`. |
