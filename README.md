@@ -87,3 +87,5 @@ npx sanity deploy
 ```
 
 After deploying, add your Vercel domain to **CORS Origins** in [sanity.io/manage](https://www.sanity.io/manage).
+
+Checking vercel
