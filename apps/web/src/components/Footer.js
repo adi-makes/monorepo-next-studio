@@ -1,42 +1,48 @@
 import Link from 'next/link'
+import { localizedPath } from '@/i18n/routing'
 
-const FOOTER_COLS = [
-  {
-    heading: 'Navigate',
-    links: [
-      { label: 'Section 1', href: '#section1' },
-      { label: 'Section 2', href: '#section2' },
-      { label: 'Section 3', href: '#section3' },
-      { label: 'Blog',      href: '/blog' },
-    ],
-  },
-  {
-    heading: 'Company',
-    links: [
-      { label: 'About',    href: '#' },
-      { label: 'Careers',  href: '#' },
-      { label: 'Press',    href: '#' },
-    ],
-  },
-  {
-    heading: 'Support',
-    links: [
-      { label: 'Help Centre', href: '#' },
-      { label: 'Contact',     href: '#' },
-      { label: 'Status',      href: '#' },
-    ],
-  },
-  {
-    heading: 'Legal',
-    links: [
-      { label: 'Terms',    href: '#' },
-      { label: 'Privacy',  href: '#' },
-      { label: 'Cookies',  href: '#' },
-    ],
-  },
-]
+/**
+ * Footer takes `locale` so its internal links (Navigate column) can be
+ * routed through localizedPath(). Placeholder columns keep href="#" since
+ * they're not real routes yet.
+ */
+export default function Footer({ locale }) {
+  const FOOTER_COLS = [
+    {
+      heading: 'Navigate',
+      links: [
+        { label: 'Section 1', href: localizedPath(locale, '/#section1') },
+        { label: 'Section 2', href: localizedPath(locale, '/#section2') },
+        { label: 'Section 3', href: localizedPath(locale, '/#section3') },
+        { label: 'Blog',      href: localizedPath(locale, '/blog') },
+      ],
+    },
+    {
+      heading: 'Company',
+      links: [
+        { label: 'About',    href: '#' },
+        { label: 'Careers',  href: '#' },
+        { label: 'Press',    href: '#' },
+      ],
+    },
+    {
+      heading: 'Support',
+      links: [
+        { label: 'Help Centre', href: '#' },
+        { label: 'Contact',     href: '#' },
+        { label: 'Status',      href: '#' },
+      ],
+    },
+    {
+      heading: 'Legal',
+      links: [
+        { label: 'Terms',    href: '#' },
+        { label: 'Privacy',  href: '#' },
+        { label: 'Cookies',  href: '#' },
+      ],
+    },
+  ]
 
-export default function Footer() {
   return (
     <footer className="bg-secondary text-slate-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
@@ -45,7 +51,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 pb-12 border-b border-tertiary">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="inline-flex items-center gap-2 mb-4">
+            <Link href={localizedPath(locale, '/')} className="inline-flex items-center gap-2 mb-4">
               <div className="w-7 h-7 bg-primary rounded-md" />
               <span className="text-white font-bold text-base">YourBrand</span>
             </Link>

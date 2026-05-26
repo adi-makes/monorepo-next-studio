@@ -2,6 +2,7 @@ import { client } from '@/sanity/lib/client'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { localizedPath } from '@/i18n/routing'
 
 const POST_QUERY = `*[_type == "blogPost" && slug.current == $slug][0] {
   _id, title, slug, category, excerpt, publishedAt, body,
@@ -51,7 +52,7 @@ function renderBody(body) {
 }
 
 export default async function BlogPostPage({ params }) {
-  const { slug } = await params
+  const { locale, slug } = await params
   let post = null
   try {
     post = await client.fetch(POST_QUERY, { slug }, { next: { revalidate: 60 } })
@@ -64,8 +65,8 @@ export default async function BlogPostPage({ params }) {
     <main className="min-h-screen bg-white py-20">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* Back link */}
-        <Link href="/blog" className="text-primary text-sm font-medium hover:underline inline-flex items-center gap-1 mb-8">
+        {/* Back link — locale-aware so it stays within the active language */}
+        <Link href={localizedPath(locale, '/blog')} className="text-primary text-sm font-medium hover:underline inline-flex items-center gap-1 mb-8">
           ← Back to Blog
         </Link>
 

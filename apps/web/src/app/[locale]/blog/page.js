@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { client } from '@/sanity/lib/client'
+import { localizedPath } from '@/i18n/routing'
 
 const POSTS_QUERY = `*[_type == "blogPost"] | order(publishedAt desc) {
   _id, title, slug, category, excerpt, publishedAt,
@@ -14,7 +15,11 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic'
 
-export default async function BlogPage() {
+export default async function BlogPage({ params }) {
+  // `locale` comes from the parent [locale] dynamic segment. We use it to
+  // build locale-prefixed post links (/en/blog/foo, /fr/blog/foo, ...).
+  const { locale } = await params
+
   let posts = []
   try {
     posts = await client.fetch(POSTS_QUERY, {}, { next: { revalidate: 60 } })
@@ -67,7 +72,7 @@ export default async function BlogPage() {
                   {post.excerpt}
                 </p>
                 <Link
-                  href={`/blog/${post.slug.current}`}
+                  href={localizedPath(locale, `/blog/${post.slug.current}`)}
                   className="text-primary text-sm font-medium hover:underline"
                 >
                   Read more →

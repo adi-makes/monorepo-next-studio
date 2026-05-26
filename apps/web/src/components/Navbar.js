@@ -1,17 +1,29 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { localizedPath } from '@/i18n/routing'
 
-const NAV_LINKS = [
-  { label: 'Home',      href: '/' },
-  { label: 'Blog',      href: '/blog' },
-  { label: 'Section 1', href: '/#section1' },
-  { label: 'Section 2', href: '/#section2' },
-  { label: 'Section 3', href: '/#section3' },
-]
-
-export default function Navbar() {
+/**
+ * Locale-aware navbar.
+ *
+ * The `locale` prop is plumbed down from the root layout (which reads it from
+ * route params). All internal hrefs are built through localizedPath() so they
+ * never bypass the [locale] segment — that keeps URLs canonical and avoids an
+ * extra middleware redirect on every click.
+ *
+ * Plain <a> tags are used for in-page anchors (Section 1/2/3) so the browser
+ * handles hash scrolling natively even when navigating across pages.
+ */
+export default function Navbar({ locale }) {
   const [open, setOpen] = useState(false)
+
+  const links = [
+    { label: 'Home',      href: localizedPath(locale, '/') },
+    { label: 'Blog',      href: localizedPath(locale, '/blog') },
+    { label: 'Section 1', href: localizedPath(locale, '/#section1') },
+    { label: 'Section 2', href: localizedPath(locale, '/#section2') },
+    { label: 'Section 3', href: localizedPath(locale, '/#section3') },
+  ]
 
   return (
     <nav className="sticky top-0 z-50 bg-secondary border-b border-tertiary">
@@ -19,14 +31,14 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+          <Link href={localizedPath(locale, '/')} className="flex items-center gap-2.5 shrink-0">
             <div className="w-8 h-8 bg-primary rounded-md" />
             <span className="text-white font-bold text-lg tracking-tight">YourBrand</span>
           </Link>
 
           {/* Desktop links */}
           <div className="hidden md:flex items-center gap-7">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
@@ -69,7 +81,7 @@ export default function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden bg-secondary border-t border-tertiary px-4 pb-4 pt-2 space-y-1">
-          {NAV_LINKS.map((link) => (
+          {links.map((link) => (
             <a
               key={link.href}
               href={link.href}
