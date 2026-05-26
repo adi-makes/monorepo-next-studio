@@ -36,7 +36,7 @@ const USE_CASES = [
   },
 ]
 
-export default function Section4() {
+export default function Section3() {
   return (
     <section id="section3" className="bg-slate-50 min-h-[85vh] flex items-center py-16">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
