@@ -2,6 +2,10 @@
 
 A monorepo containing the Next.js web app and Sanity Studio for content management.
 
+**Docs:**
+- [`GUIDE.md`](GUIDE.md) — human-readable walkthrough of how the project is built and why
+- [`AGENT_BLUEPRINT.md`](AGENT_BLUEPRINT.md) — verbatim reproduction spec for AI agents
+
 ## Stack
 
 | Layer | Tech |
@@ -83,7 +87,7 @@ Routing is locale-prefixed from day one. The MVP serves English only, but adding
 
 The proxy, layout, and link helpers (`localizedPath`, `replaceLocale`) pick the new locale up automatically — routes like `/fr/blog/my-post` will start working immediately. Translation strings and CMS-side language fields are left as project decisions; the routing scaffold doesn't lock you to any i18n library.
 
-See [`AGENT_BLUEPRINT.md`](AGENT_BLUEPRINT.md) for the full localization architecture (config, helpers, proxy, layout).
+See [`GUIDE.md`](GUIDE.md) (Phase 7) for the narrative walkthrough, or [`AGENT_BLUEPRINT.md`](AGENT_BLUEPRINT.md) for the full file contents.
 
 ## Sanity Content
 
