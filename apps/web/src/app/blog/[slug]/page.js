@@ -11,8 +11,12 @@ const POST_QUERY = `*[_type == "blogPost" && slug.current == $slug][0] {
 const ALL_SLUGS_QUERY = `*[_type == "blogPost"] { "slug": slug.current }`
 
 export async function generateStaticParams() {
-  const posts = await client.fetch(ALL_SLUGS_QUERY)
-  return posts.map((post) => ({ slug: post.slug }))
+  try {
+    const posts = await client.fetch(ALL_SLUGS_QUERY)
+    return posts.map((post) => ({ slug: post.slug }))
+  } catch {
+    return []
+  }
 }
 
 export async function generateMetadata({ params }) {
