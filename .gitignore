@@ -38,3 +38,15 @@ next-env.d.ts
 
 # Vercel
 .vercel
+
+# Local screenshots / artifacts
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.pdf
+*.md~
+
+# Local dev notes
+*-setup.md
