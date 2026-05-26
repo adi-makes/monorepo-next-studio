@@ -12,8 +12,15 @@ export const metadata = {
   description: 'Placeholder blog page',
 }
 
+export const dynamic = 'force-dynamic'
+
 export default async function BlogPage() {
-  const posts = await client.fetch(POSTS_QUERY, {}, { next: { revalidate: 60 } })
+  let posts = []
+  try {
+    posts = await client.fetch(POSTS_QUERY, {}, { next: { revalidate: 60 } })
+  } catch {
+    posts = []
+  }
 
   return (
     <main className="min-h-screen bg-white py-20">

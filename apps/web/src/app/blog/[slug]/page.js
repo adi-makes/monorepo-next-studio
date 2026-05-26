@@ -10,6 +10,8 @@ const POST_QUERY = `*[_type == "blogPost" && slug.current == $slug][0] {
 
 const ALL_SLUGS_QUERY = `*[_type == "blogPost"] { "slug": slug.current }`
 
+export const dynamic = 'force-dynamic'
+
 export async function generateStaticParams() {
   try {
     const posts = await client.fetch(ALL_SLUGS_QUERY)
@@ -21,7 +23,12 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { slug } = await params
-  const post = await client.fetch(POST_QUERY, { slug })
+  let post = null
+  try {
+    post = await client.fetch(POST_QUERY, { slug })
+  } catch {
+    post = null
+  }
   if (!post) return {}
   return { title: `${post.title} | YourBrand`, description: post.excerpt }
 }
@@ -45,7 +52,12 @@ function renderBody(body) {
 
 export default async function BlogPostPage({ params }) {
   const { slug } = await params
-  const post = await client.fetch(POST_QUERY, { slug }, { next: { revalidate: 60 } })
+  let post = null
+  try {
+    post = await client.fetch(POST_QUERY, { slug }, { next: { revalidate: 60 } })
+  } catch {
+    post = null
+  }
   if (!post) notFound()
 
   return (

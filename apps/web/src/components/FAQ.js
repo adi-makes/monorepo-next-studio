@@ -4,7 +4,12 @@ import FAQAccordion from './FAQAccordion'
 const FAQ_QUERY = `*[_type == "faqItem"] | order(order asc) { _id, question, answer }`
 
 export default async function FAQ() {
-  const faqs = await client.fetch(FAQ_QUERY, {}, { next: { revalidate: 60 } })
+  let faqs = []
+  try {
+    faqs = await client.fetch(FAQ_QUERY, {}, { next: { revalidate: 60 } })
+  } catch {
+    faqs = []
+  }
 
   return (
     <section className="bg-slate-50 min-h-[85vh] flex items-center py-16">
