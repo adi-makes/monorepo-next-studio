@@ -8,7 +8,7 @@ A monorepo containing the Next.js web app and Sanity Studio for content manageme
 |---|---|
 | Frontend | Next.js 16 (App Router) |
 | Styling | Tailwind CSS |
-| CMS | Sanity v3 |
+| CMS | Sanity Studio v5 |
 | Deployment | Vercel (web) · Sanity Hosting (studio) |
 
 ## Structure
@@ -76,9 +76,11 @@ Manage content at [sanity.io/manage](https://www.sanity.io/manage) or via the St
 
 ### Web → Vercel
 1. Import the repo on [vercel.com](https://vercel.com)
-2. Set **Root Directory** to `apps/web`
-3. Add the environment variables from `.env.example`
+2. Set **Root Directory** to `apps/web` (Vercel auto-detects Next.js from there)
+3. Under **Environment Variables**, add the three `NEXT_PUBLIC_SANITY_*` values from `.env.example` (Production, Preview, Development)
 4. Deploy
+
+> The blog and FAQ render dynamically at request time, so the build does not depend on Sanity being reachable. If the env vars are missing the site still deploys — those sections just render empty.
 
 ### Studio → Sanity Hosting
 ```bash
@@ -87,5 +89,3 @@ npx sanity deploy
 ```
 
 After deploying, add your Vercel domain to **CORS Origins** in [sanity.io/manage](https://www.sanity.io/manage).
-
-Checking vercel

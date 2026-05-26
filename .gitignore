@@ -28,9 +28,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Editor
+# Editor / agent state
 .vscode/
 .idea/
+.claude/
 
 # TypeScript
 *.tsbuildinfo
