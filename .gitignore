@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+
+# Next.js
+.next/
+out/
+
+# Sanity Studio
+dist/
+.sanity/
+
+# Build output
+build/
+
+# Environment variables (local secrets — never commit these)
+# .env.example is intentionally NOT listed here
+.env
+.env*.local
+
+# Misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Vercel
+.vercel
