@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  /* ===================================================
+   * BRAND COLOR SYSTEM
+   * Change only these 3 values to retheme the entire app.
+   *
+   * primary   — accent: buttons, badges, highlights, links
+   * secondary — dark base: hero bg, footer, dark sections
+   * tertiary  — elevated surfaces: cards/panels in dark zones
+   * =================================================== */
+  --color-primary:   #10b981;
+  --color-secondary: #0f172a;
+  --color-tertiary:  #1e293b;
+}
