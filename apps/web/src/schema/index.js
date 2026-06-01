@@ -10,6 +10,7 @@
 // =============================================================================
 
 export * from './organization'
+export * from './blog'
 export * from './website'
 export * from './person'
 export * from './breadcrumb'
