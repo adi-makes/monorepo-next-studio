@@ -1,52 +1,81 @@
 // ============================================================================
-// Locale proxy (Next.js 16's renamed middleware)
+// Locale proxy (Next.js 16's renamed middleware) + redirect management.
 // ----------------------------------------------------------------------------
-// Lives at /src/proxy.js. Next.js 16 deprecated the `middleware` file
-// convention in favor of `proxy` — same runtime, same Edge environment, same
-// matcher syntax. The exported function must be named `proxy` (or default).
+// Two responsibilities, in order:
 //
-// Runs on every request that isn't a Next.js internal asset or API route
-// (see `matcher` below). Two responsibilities:
-//
-//   1. If the first path segment is an active locale, do nothing — the
-//      request proceeds to /app/[locale]/... as written.
-//   2. Otherwise, redirect to the same path under DEFAULT_LOCALE.
-//        /            -> /en
-//        /blog        -> /en/blog
-//        /blog/foo    -> /en/blog/foo
-//
-// Once new codes are added to LOCALES (e.g. 'fr'), this same logic routes
-// '/fr/...' correctly with no edits. To layer in Accept-Language detection
-// later, extend pickLocale() — keep the rest as-is.
+//   1. Editor-managed redirects (Sanity `redirect` docs). Best-effort: looked
+//      up against a short-lived in-memory cache. The reliable slug-history path
+//      is the per-document `oldSlugs` handling inside the page routes.
+//   2. Locale prefixing — ensure every request lands under /<locale>/...
 // ============================================================================
 
-import { NextResponse } from 'next/server'
-import { LOCALES, DEFAULT_LOCALE } from './i18n/config'
+import {NextResponse} from 'next/server'
+import {LOCALES, DEFAULT_LOCALE} from './i18n/config'
 
-/**
- * Decide which locale to redirect an un-prefixed request to.
- * MVP: always DEFAULT_LOCALE. Future hook: read accept-language, cookies, etc.
- */
-function pickLocale(/* request */) {
-  return DEFAULT_LOCALE
+const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'
+
+// --- redirect cache ---------------------------------------------------------
+const REDIRECT_TTL = 60_000
+let redirectCache = {at: 0, data: []}
+
+async function getRedirects() {
+  if (!projectId) return []
+  const now = Date.now()
+  if (now - redirectCache.at < REDIRECT_TTL) return redirectCache.data
+  try {
+    const query = '*[_type=="redirect" && enabled==true]{source,destination,"permanent":coalesce(permanent,true)}'
+    const url = `https://${projectId}.apicdn.sanity.io/v2025-01-01/data/query/${dataset}?query=${encodeURIComponent(query)}`
+    const res = await fetch(url)
+    const json = await res.json()
+    redirectCache = {at: now, data: Array.isArray(json.result) ? json.result : []}
+  } catch {
+    redirectCache = {at: now, data: redirectCache.data}
+  }
+  return redirectCache.data
 }
 
-export function proxy(request) {
-  const { pathname } = request.nextUrl
+function localeOf(pathname) {
+  const seg = pathname.split('/')[1]
+  return LOCALES.includes(seg) ? seg : null
+}
 
+function stripLocale(pathname) {
+  const locale = localeOf(pathname)
+  if (!locale) return pathname
+  const rest = pathname.slice(locale.length + 1)
+  return rest || '/'
+}
+
+export async function proxy(request) {
+  const {pathname} = request.nextUrl
+
+  // 1. Editor-managed redirects (match against the locale-less path).
+  const barePath = stripLocale(pathname).replace(/\/+$/, '') || '/'
+  const redirects = await getRedirects()
+  const hit = redirects.find((r) => r.source?.replace(/\/+$/, '') === barePath && barePath !== '/')
+  if (hit) {
+    const locale = localeOf(pathname) || DEFAULT_LOCALE
+    const dest = /^https?:\/\//.test(hit.destination)
+      ? hit.destination
+      : `/${locale}${hit.destination.startsWith('/') ? '' : '/'}${hit.destination}`
+    const url = request.nextUrl.clone()
+    if (/^https?:\/\//.test(dest)) return NextResponse.redirect(dest, hit.permanent ? 308 : 307)
+    url.pathname = dest
+    return NextResponse.redirect(url, hit.permanent ? 308 : 307)
+  }
+
+  // 2. Locale prefixing.
   const hasLocalePrefix = LOCALES.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
   )
   if (hasLocalePrefix) return
 
-  const locale = pickLocale(request)
   const url = request.nextUrl.clone()
-  url.pathname = pathname === '/' ? `/${locale}` : `/${locale}${pathname}`
+  url.pathname = pathname === '/' ? `/${DEFAULT_LOCALE}` : `/${DEFAULT_LOCALE}${pathname}`
   return NextResponse.redirect(url)
 }
 
 export const config = {
-  // Skip Next internals, the api/ tree, and any path that looks like a file
-  // (has an extension — favicon.ico, robots.txt, sitemap.xml, images, etc).
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 }

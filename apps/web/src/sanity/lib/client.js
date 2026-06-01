@@ -1,12 +1,28 @@
-import { createClient } from 'next-sanity'
+// =============================================================================
+// Sanity client — exports a configured `createClient` instance.
+// When Sanity env vars are not set (e.g. on a fresh clone before .env.local is
+// created), a no-op stub is exported so the build never crashes. All data reads
+// should go through `sanityFetch` in ./fetch, not this client directly.
+// =============================================================================
 
-const projectId  = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
-const dataset    = process.env.NEXT_PUBLIC_SANITY_DATASET    || 'production'
-const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2025-01-01'
+import {createClient} from 'next-sanity'
+import {projectId, dataset, apiVersion, isSanityConfigured} from './api'
 
-// Only create the client if env vars are present. Otherwise export a stub
-// whose fetch() resolves to [] so builds don't crash when Sanity isn't configured
-// (e.g. on Vercel before env vars are set).
-export const client = projectId
-  ? createClient({ projectId, dataset, apiVersion, useCdn: true })
-  : { fetch: async () => [] }
+// Real client when configured; otherwise a stub whose fetch() resolves to null
+// so builds and renders never crash before Sanity env vars are set (e.g. on a
+// fresh Vercel deploy). All reads go through sanityFetch() in ./fetch.
+export const client = isSanityConfigured
+  ? createClient({
+      projectId,
+      dataset,
+      apiVersion,
+      useCdn: true,
+      perspective: 'published',
+      stega: false,
+    })
+  : /** @type {any} */ ({
+      fetch: async () => null,
+      withConfig() {
+        return this
+      },
+    })

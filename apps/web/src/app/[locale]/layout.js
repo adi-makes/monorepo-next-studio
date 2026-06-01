@@ -1,45 +1,47 @@
 // ============================================================================
-// Root layout — lives at /app/[locale]/layout.js, not /app/layout.js
-// ----------------------------------------------------------------------------
-// With every page nested under the [locale] dynamic segment, this IS the root
-// layout (the one that owns <html> and <body>). Middleware ensures no request
-// ever reaches the app without passing through here.
-//
-// Adding a locale later is purely additive:
-//   - LOCALES.push('fr') in i18n/config.js
-//   - generateStaticParams() below picks it up automatically
-//   - middleware will start routing /fr/* without changes
+// Root layout — owns <html>/<body>. Injects site-wide JSON-LD (Organization +
+// WebSite) and analytics from Sanity Site Settings, and enables Visual Editing
+// + a draft banner when Next.js Draft Mode is on.
 // ============================================================================
 
-import { notFound } from 'next/navigation'
+import {notFound} from 'next/navigation'
+import {draftMode} from 'next/headers'
+import {VisualEditing} from 'next-sanity/visual-editing'
 import '../globals.css'
-import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
-import { LOCALES } from '@/i18n/config'
-import { isValidLocale, isRtlLocale } from '@/i18n/utils'
 
-export const metadata = {
-  title: 'YourBrand',
-  description: 'Placeholder app description',
-}
+import Navbar from '@/components/shared/Navbar'
+import Footer from '@/components/shared/Footer'
+import JsonLd from '@/components/shared/JsonLd'
+import DraftModeBanner from '@/components/shared/DraftModeBanner'
+import {Analytics} from '@/analytics'
 
-/**
- * Tell Next.js which locale folders to prerender at build time.
- * Returns [{ locale: 'en' }] today; grows automatically with LOCALES.
- */
+import {LOCALES} from '@/i18n/config'
+import {isValidLocale, isRtlLocale} from '@/i18n/utils'
+import {sanityFetch} from '@/sanity/lib/fetch'
+import {SITE_SETTINGS_QUERY} from '@/sanity/queries'
+import {generateOrganizationSchema, generateWebsiteSchema} from '@/schema'
+import {buildMetadata} from '@/seo'
+
 export function generateStaticParams() {
-  return LOCALES.map((locale) => ({ locale }))
+  return LOCALES.map((locale) => ({locale}))
 }
 
-export default async function LocaleLayout({ children, params }) {
-  // Next.js 15+: params is async.
-  const { locale } = await params
+export async function generateMetadata({params}) {
+  const {locale} = await params
+  const settings = (await sanityFetch({query: SITE_SETTINGS_QUERY, tags: ['siteSettings']})) || {}
+  return buildMetadata({settings, doc: {title: settings.name}, path: '/', locale, type: 'website'})
+}
 
-  // Defensive 404: middleware already rejects unknown locales, but if a
-  // request reaches this layout with a junk value (stale cached link, manual
-  // typing, bypassed middleware in a test) we want a clean 404 rather than
-  // rendering with garbage.
+export default async function LocaleLayout({children, params}) {
+  const {locale} = await params
   if (!isValidLocale(locale)) notFound()
+
+  const [settings, draft] = await Promise.all([
+    sanityFetch({query: SITE_SETTINGS_QUERY, tags: ['siteSettings']}),
+    draftMode(),
+  ])
+  const s = settings || {}
+  const brand = s.name
 
   return (
     <html lang={locale} dir={isRtlLocale(locale) ? 'rtl' : 'ltr'}>
@@ -47,9 +49,13 @@ export default async function LocaleLayout({ children, params }) {
         suppressHydrationWarning
         className="min-h-screen bg-white text-slate-900 font-sans antialiased"
       >
-        <Navbar locale={locale} />
+        {draft.isEnabled ? <DraftModeBanner /> : null}
+        <JsonLd data={[generateOrganizationSchema(s), generateWebsiteSchema(s)]} />
+        <Navbar locale={locale} brand={brand} />
         {children}
-        <Footer locale={locale} />
+        <Footer locale={locale} brand={brand} description={s.description} socialProfiles={s.socialProfiles} />
+        <Analytics analytics={s.analytics} />
+        {draft.isEnabled ? <VisualEditing /> : null}
       </body>
     </html>
   )

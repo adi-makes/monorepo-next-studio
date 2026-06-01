@@ -1,87 +1,62 @@
-import Link from 'next/link'
-import Image from 'next/image'
-import { client } from '@/sanity/lib/client'
-import { localizedPath } from '@/i18n/routing'
+// =============================================================================
+// Blog listing — /[locale]/blog
+// Shows all published posts ordered by featured + date. Metadata comes from
+// the hardcoded fallback below; override by editing this file or adding a
+// `landingPageSeo` document with slug "blog" in Sanity.
+// =============================================================================
 
-const POSTS_QUERY = `*[_type == "blogPost"] | order(publishedAt desc) {
-  _id, title, slug, category, excerpt, publishedAt,
-  "coverImageUrl": coverImage.asset->url
-}`
+import {sanityFetch} from '@/sanity/lib/fetch'
+import {POSTS_QUERY, SITE_SETTINGS_QUERY} from '@/sanity/queries'
+import {buildMetadata} from '@/seo'
+import {generateBreadcrumbSchema} from '@/schema'
+import BlogCard from '@/components/blog/BlogCard'
+import BlogEmptyState from '@/components/blog/BlogEmptyState'
+import Breadcrumbs from '@/components/shared/Breadcrumbs'
+import JsonLd from '@/components/shared/JsonLd'
+import Container from '@/components/ui/Container'
+import {SITE_URL} from '@/constants/site'
+import {localizedPath} from '@/i18n/routing'
 
-export const metadata = {
-  title: 'Blog | YourBrand',
-  description: 'Placeholder blog page',
+export async function generateMetadata({params}) {
+  const {locale} = await params
+  const settings = (await sanityFetch({query: SITE_SETTINGS_QUERY, tags: ['siteSettings']})) || {}
+  return buildMetadata({
+    settings,
+    doc: {title: 'Blog', seo: {metaDescription: 'Latest articles, guides and updates.'}},
+    path: '/blog',
+    locale,
+  })
 }
 
-export const dynamic = 'force-dynamic'
+export default async function BlogPage({params}) {
+  const {locale} = await params
+  const posts = (await sanityFetch({query: POSTS_QUERY, tags: ['blogPost']})) || []
 
-export default async function BlogPage({ params }) {
-  // `locale` comes from the parent [locale] dynamic segment. We use it to
-  // build locale-prefixed post links (/en/blog/foo, /fr/blog/foo, ...).
-  const { locale } = await params
-
-  let posts = []
-  try {
-    posts = await client.fetch(POSTS_QUERY, {}, { next: { revalidate: 60 } })
-  } catch {
-    posts = []
-  }
+  const crumbs = [
+    {name: 'Home', url: `${SITE_URL}${localizedPath(locale, '/')}`},
+    {name: 'Blog', url: `${SITE_URL}${localizedPath(locale, '/blog')}`},
+  ]
 
   return (
-    <main className="min-h-screen bg-white py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-white py-16">
+      <Container>
+        <Breadcrumbs items={[{name: 'Home', href: localizedPath(locale, '/')}, {name: 'Blog'}]} />
 
         <div className="mb-12 text-center">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">Blog</h1>
-          <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            Placeholder blog listing page. Add your posts here.
-          </p>
+          <p className="text-slate-500 text-lg max-w-xl mx-auto">Latest articles, guides and updates.</p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map((post) => (
-            <article
-              key={post._id}
-              className="border border-slate-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
-            >
-              {/* Thumbnail */}
-              <div className="h-48 bg-slate-100 relative overflow-hidden">
-                {post.coverImageUrl ? (
-                  <Image
-                    src={post.coverImageUrl}
-                    alt={post.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-slate-400 text-sm">[No Image]</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-5">
-                <span className="text-primary text-xs font-semibold uppercase tracking-wide">
-                  {post.category}
-                </span>
-                <h2 className="text-slate-900 font-semibold text-lg mt-1 mb-2">
-                  {post.title}
-                </h2>
-                <p className="text-slate-500 text-sm leading-relaxed mb-4">
-                  {post.excerpt}
-                </p>
-                <Link
-                  href={localizedPath(locale, `/blog/${post.slug.current}`)}
-                  className="text-primary text-sm font-medium hover:underline"
-                >
-                  Read more →
-                </Link>
-              </div>
-            </article>
-          ))}
+          {posts.length === 0 ? (
+            <BlogEmptyState />
+          ) : (
+            posts.map((post) => <BlogCard key={post._id} post={post} locale={locale} />)
+          )}
         </div>
-      </div>
+      </Container>
+
+      <JsonLd data={generateBreadcrumbSchema(crumbs)} />
     </main>
   )
 }

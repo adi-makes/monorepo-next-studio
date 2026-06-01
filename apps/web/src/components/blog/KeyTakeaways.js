@@ -1,0 +1,18 @@
+import {Check} from 'lucide-react'
+
+export default function KeyTakeaways({items = []}) {
+  if (!items?.length) return null
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 my-8">
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-3">Key Takeaways</h2>
+      <ul className="space-y-2">
+        {items.map((item, i) => (
+          <li key={i} className="flex gap-2 text-slate-700">
+            <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}

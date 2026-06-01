@@ -1,103 +1,168 @@
-import { client } from '@/sanity/lib/client'
-import { notFound } from 'next/navigation'
-import Link from 'next/link'
+// =============================================================================
+// Blog post — /[locale]/blog/[slug]
+// Full article page: QuickAnswer → KeyTakeaways → ToC → body → FAQ → AuthorCard
+// → RelatedPosts. Old slugs automatically 301-redirect to the current slug.
+// Metadata and JSON-LD schema inherit: Site Settings → Category → Post.
+// =============================================================================
+
+import {notFound, redirect} from 'next/navigation'
 import Image from 'next/image'
-import { localizedPath } from '@/i18n/routing'
+import {sanityFetch} from '@/sanity/lib/fetch'
+import {
+  POST_BY_SLUG_QUERY,
+  POST_BY_OLD_SLUG_QUERY,
+  POST_SLUGS_QUERY,
+  RELATED_POSTS_QUERY,
+  SITE_SETTINGS_QUERY,
+} from '@/sanity/queries'
+import {buildMetadata} from '@/seo'
+import {resolveAiSeo, resolveSchemaConfig, resolveFaq} from '@/seo/resolve'
+import {buildPostSchemas} from '@/schema'
+import {imageUrl} from '@/sanity/lib/image'
+import {extractHeadings} from '@/utils/portable-text'
+import {formatDate, isoDate} from '@/utils/format'
+import {localizedPath} from '@/i18n/routing'
+import {SITE_URL} from '@/constants/site'
 
-const POST_QUERY = `*[_type == "blogPost" && slug.current == $slug][0] {
-  _id, title, slug, category, excerpt, publishedAt, body,
-  "coverImageUrl": coverImage.asset->url
-}`
-
-const ALL_SLUGS_QUERY = `*[_type == "blogPost"] { "slug": slug.current }`
-
-export const dynamic = 'force-dynamic'
+import PostBody from '@/components/blog/PostBody'
+import TableOfContents from '@/components/blog/TableOfContents'
+import QuickAnswer from '@/components/blog/QuickAnswer'
+import KeyTakeaways from '@/components/blog/KeyTakeaways'
+import RelatedPosts from '@/components/blog/RelatedPosts'
+import AuthorCard from '@/components/blog/AuthorCard'
+import FAQSection from '@/components/shared/FAQSection'
+import Breadcrumbs from '@/components/shared/Breadcrumbs'
+import JsonLd from '@/components/shared/JsonLd'
 
 export async function generateStaticParams() {
-  try {
-    const posts = await client.fetch(ALL_SLUGS_QUERY)
-    return posts.map((post) => ({ slug: post.slug }))
-  } catch {
-    return []
-  }
+  const slugs = (await sanityFetch({query: POST_SLUGS_QUERY, tags: ['blogPost']})) || []
+  return slugs.map((p) => ({slug: p.slug}))
 }
 
-export async function generateMetadata({ params }) {
-  const { slug } = await params
-  let post = null
-  try {
-    post = await client.fetch(POST_QUERY, { slug })
-  } catch {
-    post = null
-  }
+async function loadPost(slug) {
+  const [settings, post] = await Promise.all([
+    sanityFetch({query: SITE_SETTINGS_QUERY, tags: ['siteSettings']}),
+    sanityFetch({query: POST_BY_SLUG_QUERY, params: {slug}, tags: ['blogPost']}),
+  ])
+  return {settings: settings || {}, post}
+}
+
+export async function generateMetadata({params}) {
+  const {locale, slug} = await params
+  const {settings, post} = await loadPost(slug)
   if (!post) return {}
-  return { title: `${post.title} | YourBrand`, description: post.excerpt }
-}
-
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric',
+  return buildMetadata({
+    settings,
+    category: post.category,
+    doc: post,
+    path: `/blog/${slug}`,
+    locale,
+    type: 'article',
   })
 }
 
-function renderBody(body) {
-  if (!body?.length) return null
-  return body.map((block) => {
-    if (block._type !== 'block') return null
-    const text = block.children?.map((c) => c.text).join('') ?? ''
-    if (block.style === 'h2') return <h2 key={block._key} className="text-2xl font-bold text-slate-900 mt-8 mb-3">{text}</h2>
-    if (block.style === 'h3') return <h3 key={block._key} className="text-xl font-bold text-slate-900 mt-6 mb-2">{text}</h3>
-    return <p key={block._key} className="text-slate-600 leading-relaxed mb-4">{text}</p>
-  })
-}
+export default async function BlogPostPage({params}) {
+  const {locale, slug} = await params
+  const {settings, post} = await loadPost(slug)
 
-export default async function BlogPostPage({ params }) {
-  const { locale, slug } = await params
-  let post = null
-  try {
-    post = await client.fetch(POST_QUERY, { slug }, { next: { revalidate: 60 } })
-  } catch {
-    post = null
+  if (!post) {
+    const moved = await sanityFetch({query: POST_BY_OLD_SLUG_QUERY, params: {slug}, tags: ['blogPost']})
+    if (moved?.slug) redirect(localizedPath(locale, `/blog/${moved.slug}`))
+    notFound()
   }
-  if (!post) notFound()
+
+  const aiSeo = resolveAiSeo({settings, category: post.category, doc: post})
+  const schemaConfig = resolveSchemaConfig({settings, category: post.category, doc: post})
+  const faqs = resolveFaq({category: post.category, doc: post})
+  const headings = post.tocEnabled === false ? [] : extractHeadings(post.body, [2, 3])
+
+  let related = post.relatedPosts || []
+  if (!related.length && post.category?._id) {
+    related =
+      (await sanityFetch({
+        query: RELATED_POSTS_QUERY,
+        params: {id: post._id, categoryId: post.category._id},
+        tags: ['blogPost'],
+      })) || []
+  }
+
+  const url = `${SITE_URL}${localizedPath(locale, `/blog/${slug}`)}`
+  const breadcrumbs = [
+    {name: 'Home', url: `${SITE_URL}${localizedPath(locale, '/')}`},
+    {name: 'Blog', url: `${SITE_URL}${localizedPath(locale, '/blog')}`},
+    ...(post.category
+      ? [{name: post.category.name, url: `${SITE_URL}${localizedPath(locale, `/blog/category/${post.category.slug}`)}`}]
+      : []),
+    {name: post.title, url},
+  ]
+  const schemas = buildPostSchemas({post, url, settings, schemaConfig, faqs, breadcrumbs, locale})
+
+  const cover = imageUrl(post.featuredImage, {width: 1200, height: 630, fit: 'crop'})
 
   return (
-    <main className="min-h-screen bg-white py-20">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-white py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 lg:grid lg:grid-cols-[1fr_240px] lg:gap-12">
+        <article className="min-w-0">
+          <Breadcrumbs
+            items={[
+              {name: 'Home', href: localizedPath(locale, '/')},
+              {name: 'Blog', href: localizedPath(locale, '/blog')},
+              ...(post.category
+                ? [{name: post.category.name, href: localizedPath(locale, `/blog/category/${post.category.slug}`)}]
+                : []),
+              {name: post.title},
+            ]}
+          />
 
-        {/* Back link — locale-aware so it stays within the active language */}
-        <Link href={localizedPath(locale, '/blog')} className="text-primary text-sm font-medium hover:underline inline-flex items-center gap-1 mb-8">
-          ← Back to Blog
-        </Link>
+          {post.category ? (
+            <span className="text-primary text-xs font-semibold uppercase tracking-wide">{post.category.name}</span>
+          ) : null}
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-2 mb-3">{post.title}</h1>
 
-        {/* Header */}
-        <span className="text-primary text-xs font-semibold uppercase tracking-wide">{post.category}</span>
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-2 mb-4">{post.title}</h1>
-        <p className="text-slate-400 text-sm mb-8">{formatDate(post.publishedAt)}</p>
+          <div className="flex items-center gap-3 mb-8">
+            {post.author ? <AuthorCard author={post.author} compact /> : null}
+            {post.publishedAt ? (
+              <time className="text-slate-400 text-sm" dateTime={isoDate(post.publishedAt)}>
+                {formatDate(post.publishedAt)}
+              </time>
+            ) : null}
+          </div>
 
-        {/* Cover image */}
-        <div className="h-64 bg-slate-100 rounded-xl overflow-hidden relative mb-10">
-          {post.coverImageUrl ? (
-            <Image
-              src={post.coverImageUrl}
-              alt={post.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 768px"
-              priority
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-slate-400 text-sm">[No Image]</span>
+          {cover ? (
+            <div className="relative aspect-[16/9] rounded-xl overflow-hidden mb-8 bg-slate-100">
+              <Image
+                src={cover}
+                alt={post.featuredImage?.alt || post.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 760px"
+                priority
+              />
             </div>
-          )}
-        </div>
+          ) : null}
 
-        {/* Body */}
-        <div className="prose-sm sm:prose max-w-none">
-          {renderBody(post.body)}
-        </div>
+          {aiSeo.quickAnswer ? <QuickAnswer text={aiSeo.quickAnswer} /> : null}
+          {aiSeo.keyTakeaways?.length ? <KeyTakeaways items={aiSeo.keyTakeaways} /> : null}
+
+          <PostBody body={post.body} locale={locale} />
+
+          {faqs.length ? <FAQSection heading="Frequently Asked Questions" faqs={faqs} className="!py-10" /> : null}
+
+          {post.author ? <AuthorCard author={post.author} /> : null}
+
+          <RelatedPosts posts={related} locale={locale} />
+        </article>
+
+        {headings.length ? (
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <TableOfContents headings={headings} />
+            </div>
+          </aside>
+        ) : null}
       </div>
+
+      <JsonLd data={schemas} />
     </main>
   )
 }

@@ -1,4 +1,4 @@
-import { faqItem } from './faqItem'
-import { blogPost } from './blogPost'
+import {documents} from './documents'
+import {objects} from './objects'
 
-export const schemaTypes = [faqItem, blogPost]
+export const schemaTypes = [...documents, ...objects]
