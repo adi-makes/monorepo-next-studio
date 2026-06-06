@@ -6,7 +6,7 @@
 // =============================================================================
 
 import {notFound, redirect} from 'next/navigation'
-import Image from 'next/image'
+import ReactDOM from 'react-dom'
 import {sanityFetch} from '@/sanity/lib/fetch'
 import {
   POST_BY_SLUG_QUERY,
@@ -96,7 +96,28 @@ export default async function BlogPostPage({params}) {
   ]
   const schemas = buildPostSchemas({post, url, settings, faqs, breadcrumbs, locale})
 
-  const cover = imageUrl(post.featuredImage, {width: 1200, height: 630, fit: 'crop'})
+  const cover = imageUrl(post.featuredImage, {width: 960, height: 540, quality: 70, fit: 'crop'})
+  const coverSrcSet = [640, 760, 960, 1200]
+    .map((width) => {
+      const src = imageUrl(post.featuredImage, {
+        width,
+        height: Math.round(width * 9 / 16),
+        quality: 70,
+        fit: 'crop',
+      })
+      return src ? `${src} ${width}w` : null
+    })
+    .filter(Boolean)
+    .join(', ')
+  const coverSizes = '(max-width: 1024px) calc(100vw - 2rem), 760px'
+  if (cover && coverSrcSet) {
+    ReactDOM.preload(cover, {
+      as: 'image',
+      fetchPriority: 'high',
+      imageSrcSet: coverSrcSet,
+      imageSizes: coverSizes,
+    })
+  }
 
   return (
     <main className="min-h-screen bg-white py-12">
@@ -121,7 +142,7 @@ export default async function BlogPostPage({params}) {
           <div className="flex items-center gap-3 mb-8">
             {post.author ? <AuthorCard author={post.author} compact locale={locale} /> : null}
             {post.publishedAt ? (
-              <time className="text-slate-400 text-sm" dateTime={isoDate(post.publishedAt)}>
+              <time className="text-slate-600 text-sm" dateTime={isoDate(post.publishedAt)}>
                 {formatDate(post.publishedAt)}
               </time>
             ) : null}
@@ -129,13 +150,17 @@ export default async function BlogPostPage({params}) {
 
           {cover ? (
             <div className="relative aspect-[16/9] rounded-xl overflow-hidden mb-8 bg-slate-100">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={cover}
+                srcSet={coverSrcSet}
+                sizes={coverSizes}
                 alt={post.featuredImage?.alt || post.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 760px"
-                priority
+                width="960"
+                height="540"
+                fetchPriority="high"
+                decoding="async"
+                className="h-full w-full object-cover"
               />
             </div>
           ) : null}

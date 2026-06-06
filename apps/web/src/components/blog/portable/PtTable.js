@@ -34,7 +34,7 @@ export default function PtTable({value}) {
         </tbody>
       </table>
       {value.caption ? (
-        <figcaption className="text-sm text-slate-400 mt-2">{value.caption}</figcaption>
+        <figcaption className="text-sm text-slate-600 mt-2">{value.caption}</figcaption>
       ) : null}
     </figure>
   )

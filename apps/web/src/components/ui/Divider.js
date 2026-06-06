@@ -7,7 +7,7 @@ export default function Divider({style = 'line'}) {
   if (style === 'space') return <div className="h-10" aria-hidden />
   if (style === 'dots') {
     return (
-      <div className="my-8 text-center text-slate-300 tracking-[0.5em] select-none" aria-hidden>
+      <div className="my-8 text-center text-slate-500 tracking-[0.5em] select-none" aria-hidden>
         â€¢ â€¢ â€¢
       </div>
     )

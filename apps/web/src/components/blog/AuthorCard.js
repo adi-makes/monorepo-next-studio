@@ -46,7 +46,7 @@ export default function AuthorCard({author, compact = false, locale = 'en'}) {
           <Link href={authorHref} className="font-medium text-slate-900 hover:text-primary transition-colors">
             {author.name}
           </Link>
-          {author.role ? <div className="text-slate-400 text-xs mt-0.5">{author.role}</div> : null}
+          {author.role ? <div className="text-slate-600 text-xs mt-0.5">{author.role}</div> : null}
         </div>
       </div>
     )

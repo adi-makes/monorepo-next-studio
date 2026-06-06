@@ -23,7 +23,7 @@ export default function BlogCard({post, locale = 'en', priority = false}) {
 
   return (
     <article className="group flex flex-col rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
-      <Link href={href} className="block relative h-44 bg-slate-100 shrink-0">
+      <Link href={href} className="block relative h-44 bg-slate-100 shrink-0" aria-label={`Read ${post.title}`}>
         {cover ? (
           <Image
             src={cover}
@@ -47,7 +47,7 @@ export default function BlogCard({post, locale = 'en', priority = false}) {
             <span className="text-primary font-semibold uppercase tracking-wide">{post.category.name}</span>
           ) : null}
           {post.publishedAt ? (
-            <time className="text-slate-400" dateTime={isoDate(post.publishedAt)}>
+            <time className="text-slate-600" dateTime={isoDate(post.publishedAt)}>
               {formatDate(post.publishedAt)}
             </time>
           ) : null}

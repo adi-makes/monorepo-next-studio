@@ -24,9 +24,8 @@ export default function PtImage({value}) {
         blurDataURL={value.lqip || undefined}
       />
       {value.caption ? (
-        <figcaption className="text-center text-sm text-slate-400 mt-2">{value.caption}</figcaption>
+        <figcaption className="text-center text-sm text-slate-600 mt-2">{value.caption}</figcaption>
       ) : null}
     </figure>
   )
 }
-
