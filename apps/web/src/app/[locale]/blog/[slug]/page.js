@@ -5,7 +5,7 @@
 // Metadata and JSON-LD schema inherit: Site Settings → Category → Post.
 // =============================================================================
 
-import {notFound, redirect} from 'next/navigation'
+import {notFound, permanentRedirect, redirect} from 'next/navigation'
 import ReactDOM from 'react-dom'
 import {sanityFetch} from '@/sanity/lib/fetch'
 import {
@@ -42,7 +42,7 @@ export async function generateStaticParams() {
 async function loadPost(slug) {
   const [settings, post] = await Promise.all([
     sanityFetch({query: SITE_SETTINGS_QUERY, tags: ['siteSettings']}),
-    sanityFetch({query: POST_BY_SLUG_QUERY, params: {slug}, tags: ['blogPost']}),
+    sanityFetch({query: POST_BY_SLUG_QUERY, params: {slug}, tags: ['blogPost', 'author', 'category']}),
   ])
   return {settings: settings || {}, post}
 }
@@ -67,7 +67,11 @@ export default async function BlogPostPage({params}) {
 
   if (!post) {
     const moved = await sanityFetch({query: POST_BY_OLD_SLUG_QUERY, params: {slug}, tags: ['blogPost']})
-    if (moved?.slug) redirect(localizedPath(locale, `/blog/${moved.slug}`))
+    if (moved?.slug) {
+      const destination = localizedPath(locale, `/blog/${moved.slug}`)
+      if (moved.permanent !== false) permanentRedirect(destination)
+      redirect(destination)
+    }
     notFound()
   }
 
@@ -81,7 +85,7 @@ export default async function BlogPostPage({params}) {
       (await sanityFetch({
         query: RELATED_POSTS_QUERY,
         params: {id: post._id, categoryId: post.category._id},
-        tags: ['blogPost'],
+        tags: ['blogPost', 'author', 'category'],
       })) || []
   }
 

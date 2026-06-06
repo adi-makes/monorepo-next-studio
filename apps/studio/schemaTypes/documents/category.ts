@@ -1,3 +1,6 @@
+// Blog taxonomy document used by post listings, category filters, and category
+// archive routes in the web app.
+
 import {defineType, defineField} from 'sanity'
 
 export const category = defineType({

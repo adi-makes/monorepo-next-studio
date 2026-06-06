@@ -1,5 +1,9 @@
 'use client'
 
+// Lightweight YouTube embed that shows a thumbnail first and only mounts the
+// iframe after user interaction. This avoids eager third-party loading during
+// initial page render.
+
 import {useState} from 'react'
 import {Play} from 'lucide-react'
 import {youTubeEmbedUrl} from '@/utils/embed'

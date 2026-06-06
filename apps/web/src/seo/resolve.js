@@ -27,7 +27,7 @@ export function resolveSeo({settings, doc} = {}) {
   const siteSocial = settings.socialDefaults || {}
 
   const metaTitle = firstDefined(d.metaTitle, s.metaTitle)
-  const metaDescription = firstDefined(d.metaDescription, s.metaDescription, settings.description)
+  const metaDescription = firstDefined(d.metaDescription, doc.excerpt, doc.description, s.metaDescription, settings.description)
   // ogImage / shareImage: prefer the post's dedicated SEO image, then the
   // featured image, then the site-wide default
   const ogImage = firstDefined(d.ogImage, doc.featuredImage, s.ogImage, siteSocial.ogImage)

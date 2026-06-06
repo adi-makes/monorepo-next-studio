@@ -10,11 +10,11 @@
  */
 export default function DraftModeBanner() {
   return (
-    <div className="sticky top-0 z-[60] bg-amber-500 text-amber-950 text-sm font-medium text-center py-2 px-4">
+    <div className="sanity-draft-banner">
       Draft preview mode —{' '}
       {/* Full navigation to an API route (clears draft mode + redirects). Not a page — Link would break it. */}
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-      <a href="/api/draft-mode/disable" className="underline font-semibold">
+      <a href="/api/draft-mode/disable">
         exit preview
       </a>
     </div>

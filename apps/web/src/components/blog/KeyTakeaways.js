@@ -1,3 +1,7 @@
+// Compact list component for the "Key Takeaways" box under blog content.
+// Kept separate so articles can opt into the AI/SEO summary block only when
+// the CMS provides takeaway items.
+
 import {Check} from 'lucide-react'
 
 export default function KeyTakeaways({items = []}) {

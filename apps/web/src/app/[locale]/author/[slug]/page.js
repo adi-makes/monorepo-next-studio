@@ -1,3 +1,7 @@
+// Author profile route.
+// Loads the author document, their published posts, and the matching schema
+// nodes so the page can render both the visible profile and the SEO payload.
+
 import {notFound} from 'next/navigation'
 import {sanityFetch} from '@/sanity/lib/fetch'
 import {AUTHOR_BY_SLUG_QUERY, POSTS_BY_AUTHOR_QUERY, AUTHOR_SLUGS_QUERY, SITE_SETTINGS_QUERY} from '@/sanity/queries'

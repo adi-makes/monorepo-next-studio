@@ -1,3 +1,6 @@
+// Reusable callout block with tone-based variants for informational, success,
+// warning, and danger content.
+
 import {Info, CheckCircle, AlertTriangle, AlertCircle} from 'lucide-react'
 
 const TONES = {

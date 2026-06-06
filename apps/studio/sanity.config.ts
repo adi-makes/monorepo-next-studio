@@ -8,6 +8,8 @@ import {StudioLayout} from './schemaTypes/components/StudioLayout'
 import {wrapPublish} from './schemaTypes/actions/publishWithRedirect'
 
 const previewOrigin = process.env.SANITY_STUDIO_PREVIEW_URL || 'http://localhost:3000'
+const projectId = process.env.SANITY_STUDIO_PROJECT_ID || 'liwj8ta5'
+const dataset = process.env.SANITY_STUDIO_DATASET || 'production'
 
 // Document types whose Publish action also records slug history for redirects.
 const REDIRECT_AWARE_TYPES = ['blogPost']
@@ -19,8 +21,8 @@ export default defineConfig({
   name: 'default',
   title: 'Studio',
 
-  projectId: 'liwj8ta5',
-  dataset: 'production',
+  projectId,
+  dataset,
 
   plugins: [
     structureTool({structure}),

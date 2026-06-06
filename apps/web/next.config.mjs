@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The proxy handles trailing slash, lowercase, locale, and host/protocol
+  // normalization in one SEO-safe hop. Disabling Next's built-in slash redirect
+  // avoids chains such as /Blog/ -> /Blog -> /en/blog.
+  skipTrailingSlashRedirect: true,
   images: {
     // Images are served straight from Sanity's image CDN, which already handles
     // format conversion (auto=format) and resizing (w/h/q) via the params added

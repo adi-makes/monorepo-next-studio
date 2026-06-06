@@ -7,15 +7,16 @@
 // =============================================================================
 
 import {sanityFetch} from '@/sanity/lib/fetch'
-import {POST_SLUGS_QUERY, CATEGORY_SLUGS_QUERY} from '@/sanity/queries'
+import {POST_SLUGS_QUERY, CATEGORY_SLUGS_QUERY, AUTHOR_SLUGS_QUERY} from '@/sanity/queries'
 import {SITE_URL} from '@/constants/site'
 import {LOCALES} from '@/i18n/config'
 import {localizedPath} from '@/i18n/routing'
 
 export default async function sitemap() {
-  const [posts, categories] = await Promise.all([
+  const [posts, categories, authors] = await Promise.all([
     sanityFetch({query: POST_SLUGS_QUERY, tags: ['blogPost']}),
     sanityFetch({query: CATEGORY_SLUGS_QUERY, tags: ['category']}),
+    sanityFetch({query: AUTHOR_SLUGS_QUERY, tags: ['author']}),
   ])
 
   const entries = []
@@ -38,6 +39,7 @@ export default async function sitemap() {
   // ── Dynamic Sanity content ────────────────────────────────────────────────
   for (const p of posts || []) add(`/blog/${p.slug}`)
   for (const c of categories || []) add(`/blog/category/${c.slug}`)
+  for (const a of authors || []) add(`/author/${a.slug}`)
 
   return entries
 }

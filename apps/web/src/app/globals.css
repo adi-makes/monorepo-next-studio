@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../styles/portable-text.css";
+@import "../styles/sanity.css";
 
 @theme {
   /* ===================================================

@@ -19,5 +19,6 @@ export function buildLanguageAlternates(path = '/') {
   for (const locale of LOCALES) {
     languages[locale] = `${SITE_URL}${localizedPath(locale, path)}`
   }
+  languages['x-default'] = `${SITE_URL}${localizedPath(LOCALES[0], path)}`
   return languages
 }

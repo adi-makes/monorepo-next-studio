@@ -19,7 +19,7 @@ export const ALL_CATEGORIES_QUERY = `*[_type == "category"] | order(name asc){
 
 export const CATEGORY_BY_SLUG_QUERY = `*[_type == "category" && slug.current == $slug][0] ${categoryFields}`
 
-export const POSTS_BY_CATEGORY_QUERY = `*[_type == "blogPost" && category->slug.current == $slug && ${liveFilter}]
+export const POSTS_BY_CATEGORY_QUERY = `*[_type == "blogPost" && category._ref in *[_type == "category" && slug.current == $slug]._id && ${liveFilter}]
   | order(publishedAt desc) ${postCard}`
 
 export const CATEGORY_SLUGS_QUERY = `*[_type == "category" && defined(slug.current)]{ "slug": slug.current }`

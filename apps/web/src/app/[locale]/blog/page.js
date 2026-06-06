@@ -52,7 +52,7 @@ export default async function BlogPage({params}) {
 
   // Fetch all posts + categories in parallel (both statically cached via ISR).
   const [posts, categories] = await Promise.all([
-    sanityFetch({query: POSTS_QUERY, tags: ['blogPost']}),
+    sanityFetch({query: POSTS_QUERY, tags: ['blogPost', 'author', 'category']}),
     sanityFetch({query: ALL_CATEGORIES_QUERY, tags: ['category']}),
   ])
 

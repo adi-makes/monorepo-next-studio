@@ -8,11 +8,11 @@ import {authorFields, imageFields, liveFilter} from './fragments'
 export const AUTHOR_BY_SLUG_QUERY = `*[_type == "author" && slug.current == $slug][0] ${authorFields}`
 
 /** All author slugs for generateStaticParams. */
-export const AUTHOR_SLUGS_QUERY = `*[_type == "author"]{"slug": slug.current}`
+export const AUTHOR_SLUGS_QUERY = `*[_type == "author" && defined(slug.current)]{"slug": slug.current}`
 
 /** Blog posts written by a given author (for the author profile page). */
 export const POSTS_BY_AUTHOR_QUERY = `
-  *[_type == "blogPost" && author->slug.current == $slug && ${liveFilter}]
+  *[_type == "blogPost" && author._ref in *[_type == "author" && slug.current == $slug]._id && ${liveFilter}]
   | order(publishedAt desc) {
     _id, _type, title, "slug": slug.current, publishedAt, featured,
     "featuredImage": featuredImage${imageFields},
