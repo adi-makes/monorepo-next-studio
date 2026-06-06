@@ -1,3 +1,9 @@
+// =============================================================================
+// Review schema — generates a schema.org/Review node with optional star rating.
+// Used when a landing page reviews a product, service, or place. Set
+// primarySchemaType to "review" in Sanity schemaConfig to activate.
+// =============================================================================
+
 const CONTEXT = 'https://schema.org'
 
 /**

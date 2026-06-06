@@ -1,21 +1,40 @@
 import {defineType, defineField} from 'sanity'
 
 /**
- * Structured-data (JSON-LD) configuration. Embedded on documents and as
- * defaults on Category and Site Settings, so schema behaviour inherits
- * Site -> Category -> Document.
+ * Structured-data (JSON-LD) configuration.
+ * Embedded on Landing Page SEO documents and Site Settings.
  *
- * Booleans are intentionally left without an initialValue so "unset" means
- * "inherit from the level above". Only `enableBreadcrumb` defaults on because
- * breadcrumbs are near-universally desirable.
+ * Blog posts are always BlogPosting — schemaConfig is hidden there.
+ * For landing pages the primary type should be selected by the editor;
+ * everything else is auto-detected from page content.
  */
 export const PRIMARY_SCHEMA_TYPES = [
+  // — Page types ————————————————————————————————————————
+  {title: 'WebPage (generic)', value: 'webPage'},
+  {title: 'AboutPage', value: 'aboutPage'},
+  {title: 'ContactPage', value: 'contactPage'},
+  {title: 'FAQPage', value: 'faqPage'},
+  {title: 'CollectionPage', value: 'collectionPage'},
+  {title: 'SearchResultsPage', value: 'searchResultsPage'},
+
+  // — Article / content types ——————————————————————————
   {title: 'Article', value: 'article'},
   {title: 'BlogPosting', value: 'blogPosting'},
   {title: 'HowTo', value: 'howTo'},
+
+  // — Commerce / listing ————————————————————————————————
   {title: 'Product', value: 'product'},
   {title: 'Review', value: 'review'},
-  {title: 'WebPage', value: 'webPage'},
+  {title: 'ItemList', value: 'itemList'},
+
+  // — Organisation / business ———————————————————————————
+  {title: 'Organization', value: 'organization'},
+  {title: 'LocalBusiness', value: 'localBusiness'},
+  {title: 'Service', value: 'service'},
+  {title: 'TravelAgency', value: 'travelAgency'},
+
+  // — Site-level ————————————————————————————————————————
+  {title: 'WebSite', value: 'webSite'},
 ]
 
 export const schemaConfig = defineType({
@@ -29,17 +48,12 @@ export const schemaConfig = defineType({
       title: 'Primary Schema Type',
       type: 'string',
       options: {list: PRIMARY_SCHEMA_TYPES, layout: 'dropdown'},
-      description: 'Main entity type. Inherited from category / site when unset.',
+      description: 'Main entity type for this page. Auto-detected as BlogPosting for blog posts.',
     }),
-    defineField({name: 'enableFaqSchema', title: 'FAQ Schema', type: 'boolean'}),
-    defineField({name: 'enableSpeakable', title: 'Speakable Schema', type: 'boolean'}),
-    defineField({name: 'enableBreadcrumb', title: 'Breadcrumb Schema', type: 'boolean', initialValue: true}),
-    defineField({
-      name: 'enableVideoSchema',
-      title: 'Video Schema',
-      type: 'boolean',
-      description: 'Auto-emitted from YouTube / video blocks when enabled.',
-    }),
-    defineField({name: 'enableImageSchema', title: 'Image Schema', type: 'boolean'}),
+    defineField({name: 'enableFaqSchema', title: 'FAQ Schema', type: 'boolean', hidden: true}),
+    defineField({name: 'enableSpeakable', title: 'Speakable Schema', type: 'boolean', hidden: true}),
+    defineField({name: 'enableBreadcrumb', title: 'Breadcrumb Schema', type: 'boolean', initialValue: true, hidden: true}),
+    defineField({name: 'enableVideoSchema', title: 'Video Schema', type: 'boolean', hidden: true}),
+    defineField({name: 'enableImageSchema', title: 'Image Schema', type: 'boolean', hidden: true}),
   ],
 })

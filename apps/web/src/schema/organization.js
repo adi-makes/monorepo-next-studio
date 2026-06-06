@@ -1,3 +1,9 @@
+// =============================================================================
+// Organization schema — emitted site-wide from the root layout on every page.
+// Reads brand name, URL, logo, email, and social profiles from Sanity Site
+// Settings so editors never need to touch code to update company details.
+// =============================================================================
+
 import {SITE_URL, SITE_NAME} from '@/constants/site'
 import {imageUrl} from '@/sanity/lib/image'
 

@@ -179,9 +179,20 @@
 }
 .ds-social__img {
   width: 120px;
+  min-height: 84px;
   flex: none;
   background: linear-gradient(135deg, var(--ds-brand-weak), var(--ds-surface));
   border-right: 1px solid var(--ds-line);
+  overflow: hidden;
+  position: relative;
+}
+.ds-social__img img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .ds-social__body {
   padding: 10px 12px;

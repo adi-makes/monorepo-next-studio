@@ -1,0 +1,21 @@
+// =============================================================================
+// Author queries — single author, author's posts, all slugs for static params.
+// =============================================================================
+
+import {authorFields, imageFields, liveFilter} from './fragments'
+
+/** Full author document by slug. */
+export const AUTHOR_BY_SLUG_QUERY = `*[_type == "author" && slug.current == $slug][0] ${authorFields}`
+
+/** All author slugs for generateStaticParams. */
+export const AUTHOR_SLUGS_QUERY = `*[_type == "author"]{"slug": slug.current}`
+
+/** Blog posts written by a given author (for the author profile page). */
+export const POSTS_BY_AUTHOR_QUERY = `
+  *[_type == "blogPost" && author->slug.current == $slug && ${liveFilter}]
+  | order(publishedAt desc) {
+    _id, _type, title, "slug": slug.current, publishedAt, featured,
+    "featuredImage": featuredImage${imageFields},
+    "category": category->{_id, name, "slug": slug.current}
+  }
+`

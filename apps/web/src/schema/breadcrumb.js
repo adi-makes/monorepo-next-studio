@@ -1,3 +1,9 @@
+// =============================================================================
+// BreadcrumbList schema — generates a schema.org/BreadcrumbList node from an
+// ordered array of {name, url} items. Auto-emitted on every page that passes
+// a breadcrumbs array to buildPostSchemas / buildPageSchemas.
+// =============================================================================
+
 const CONTEXT = 'https://schema.org'
 
 /**

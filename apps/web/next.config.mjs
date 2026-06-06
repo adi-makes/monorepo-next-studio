@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Images are served straight from Sanity's image CDN, which already handles
+    // format conversion (auto=format) and resizing (w/h/q) via the params added
+    // in sanity/lib/image.js. We therefore skip Next's own optimizer — this also
+    // avoids its SSRF "private IP" check, which false-positives on NAT64/DNS64
+    // networks where cdn.sanity.io resolves to a 64:ff9b::/96 address.
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

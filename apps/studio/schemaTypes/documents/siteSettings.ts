@@ -32,6 +32,28 @@ export const siteSettings = defineType({
       validation: (Rule) => Rule.email(),
     }),
 
+    // Services — defined once here, automatically emitted as Service + ItemList
+    // JSON-LD on every landing page. No per-page entry needed.
+    defineField({
+      name: 'services',
+      title: 'Services',
+      type: 'array',
+      group: 'organization',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          name: 'service',
+          fields: [
+            defineField({name: 'name', title: 'Name', type: 'string', validation: (Rule) => Rule.required()}),
+            defineField({name: 'description', title: 'Description', type: 'text', rows: 2}),
+            defineField({name: 'url', title: 'URL', type: 'url', description: 'Optional link to the service page.'}),
+          ],
+          preview: {select: {title: 'name', subtitle: 'description'}},
+        }),
+      ],
+      description: 'Your services. Automatically emitted as Service + ItemList JSON-LD on every landing page — no per-page setup needed.',
+    }),
+
     // Default SEO / AI / schema
     defineField({name: 'defaultSeo', title: 'Default SEO', type: 'seo', group: 'seo'}),
     defineField({name: 'titleTemplate', title: 'Title Template', type: 'string', group: 'seo', description: 'Use %s for the page title, e.g. "%s | YourBrand".', initialValue: '%s'}),

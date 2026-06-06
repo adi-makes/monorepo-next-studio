@@ -1,3 +1,9 @@
+// =============================================================================
+// Product schema — generates a schema.org/Product node. Includes Offer pricing
+// and AggregateRating when provided. Use when the landing page primarySchemaType
+// is set to "product" in the Sanity schemaConfig field.
+// =============================================================================
+
 import {imageUrl} from '@/sanity/lib/image'
 
 const CONTEXT = 'https://schema.org'

@@ -1,8 +1,15 @@
-// ============================================================================
-// Image helpers. Queries dereference `asset->url` + metadata (see fragments),
-// so here we just decorate the CDN URL with Sanity's transform query params —
-// no @sanity/image-url dependency required.
-// ============================================================================
+// =============================================================================
+// Sanity image helpers — imageUrl() and imageAlt().
+//
+// GROQ queries already dereference images to `{ url, lqip, dimensions, alt }`
+// via the `imageFields` fragment (see sanity/queries/fragments.js), so we only
+// need to append Sanity's CDN transform query params (w, h, q, fit, auto) to
+// the already-resolved CDN URL. No @sanity/image-url builder dependency needed.
+//
+// Usage:
+//   imageUrl(post.featuredImage, { width: 1200, height: 630, fit: 'crop' })
+//   imageAlt(post.featuredImage) // → alt string or ''
+// =============================================================================
 
 /**
  * @typedef {Object} SanityImage

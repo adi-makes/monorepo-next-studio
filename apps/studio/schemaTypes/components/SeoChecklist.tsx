@@ -19,19 +19,20 @@ export function SeoChecklist() {
   const seo = (useFormValue(['seo']) as Record<string, unknown>) || {}
   const aiSeo = (useFormValue(['aiSeo']) as Record<string, unknown>) || {}
   const featuredImage = useFormValue(['featuredImage'])
-  const faq = useFormValue(['faq']) as unknown[] | undefined
-  const schemaConfig = (useFormValue(['schemaConfig']) as Record<string, unknown>) || {}
+  // blogPost stores inline Q&As in `faq`; landingPageSeo references items in `selectedFaqs`.
+  const inlineFaq = useFormValue(['faq']) as unknown[] | undefined
+  const selectedFaqs = useFormValue(['selectedFaqs']) as unknown[] | undefined
+  const faq = inlineFaq ?? selectedFaqs
   const body = useFormValue(['body'])
 
   const checks: Check[] = [
     {label: 'Meta title', ok: Boolean(seo.metaTitle)},
     {label: 'Meta description', ok: Boolean(seo.metaDescription)},
+    {label: 'Featured image', ok: Boolean(featuredImage || seo.ogImage)},
     {label: 'Canonical URL', ok: Boolean(seo.canonicalUrl), hint: 'optional — inherited if blank'},
-    {label: 'Featured / OG image', ok: Boolean(featuredImage || seo.ogImage)},
     {label: 'Quick Answer (AI)', ok: Boolean(aiSeo.quickAnswer)},
-    {label: 'Speakable content', ok: Boolean(aiSeo.speakableContent)},
-    {label: 'FAQ', ok: Array.isArray(faq) && faq.length > 0},
-    {label: 'Primary schema type', ok: Boolean(schemaConfig.primarySchemaType), hint: 'optional — inherited if blank'},
+    {label: 'Key Takeaways', ok: Array.isArray(aiSeo.keyTakeaways) && (aiSeo.keyTakeaways as unknown[]).length > 0, hint: 'optional'},
+    {label: 'FAQ', ok: Array.isArray(faq) && faq.length > 0, hint: 'optional'},
     {label: 'Internal links in body', ok: hasInternalLink(body)},
   ]
 

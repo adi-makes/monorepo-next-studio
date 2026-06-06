@@ -8,9 +8,10 @@
 import {sanityFetch} from '@/sanity/lib/fetch'
 import {LANDING_PAGE_SEO_QUERY, SITE_SETTINGS_QUERY} from '@/sanity/queries'
 import {buildMetadata} from '@/seo'
-import {resolveFaq, resolveSchemaConfig} from '@/seo/resolve'
+import {resolveFaq, resolveAiSeo} from '@/seo/resolve'
 import {buildPageSchemas} from '@/schema'
 import FAQSection from '@/components/shared/FAQSection'
+import QuickAnswer from '@/components/blog/QuickAnswer'
 import JsonLd from '@/components/shared/JsonLd'
 import {SITE_URL} from '@/constants/site'
 import {localizedPath} from '@/i18n/routing'
@@ -40,10 +41,10 @@ export default async function Home({params}) {
   const {locale} = await params
   const {settings, seo} = await loadHome()
 
-  const schemaConfig = resolveSchemaConfig({settings, doc: seo || {}})
   const faqs = resolveFaq({doc: seo || {}})
+  const aiSeo = resolveAiSeo({doc: seo || {}})
   const url = `${SITE_URL}${localizedPath(locale, '/')}`
-  const schemas = seo ? buildPageSchemas({page: seo, url, schemaConfig, faqs, breadcrumbs: []}) : []
+  const schemas = seo ? buildPageSchemas({page: seo, url, settings, faqs, breadcrumbs: []}) : []
 
   return (
     <main>
@@ -54,6 +55,9 @@ export default async function Home({params}) {
           <p className="mt-4 text-lg text-slate-600">Build your homepage in code. Manage SEO in Sanity.</p>
         </div>
       </section>
+
+      {/* Speakable target for voice/AI — hidden, feeds Speakable JSON-LD only */}
+      <QuickAnswer text={aiSeo.quickAnswer} />
 
       {/* FAQ from Sanity (if configured for homepage in landingPageSeo) */}
       {faqs.length ? <FAQSection faqs={faqs} className="bg-slate-50" /> : null}

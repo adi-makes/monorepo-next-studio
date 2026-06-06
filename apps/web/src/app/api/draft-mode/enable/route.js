@@ -2,7 +2,7 @@ import {defineEnableDraftMode} from 'next-sanity/draft-mode'
 import {draftMode} from 'next/headers'
 import {NextResponse} from 'next/server'
 import {client} from '@/sanity/lib/client'
-import {readToken, isSanityConfigured} from '@/sanity/lib/api'
+import {readToken, isSanityConfigured} from '@/sanity/lib/config'
 
 // ─── Presentation-tool handler (validates the Sanity preview URL secret) ─────
 const presentationHandler =

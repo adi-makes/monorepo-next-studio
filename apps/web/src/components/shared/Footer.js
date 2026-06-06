@@ -1,27 +1,14 @@
 // =============================================================================
 // Footer — site footer with brand, description, nav links, social profiles, and
 // copyright. Brand name and description come from Sanity Site Settings.
-// Social profile URLs come from siteSettings.socialProfiles. Icons are lucide-react
-// semantic stand-ins (lucide-react has no brand logos).
+// Social profile URLs come from siteSettings.socialProfiles. Icons are real
+// brand logos (see BrandIcons); unknown platforms fall back to a generic link.
 // =============================================================================
 
 import Link from 'next/link'
-import {X, Link2, Code2, PlayCircle, Globe, Camera} from 'lucide-react'
+import {Link2} from 'lucide-react'
+import SocialBrandIcon, {SUPPORTED_BRANDS} from './BrandIcons'
 import {localizedPath} from '@/i18n/routing'
-
-/**
- * Map Sanity platform values to the closest available lucide-react icon.
- * lucide-react has no brand logos — we use semantic stand-ins.
- * Unmapped platforms fall back to Globe.
- */
-const PLATFORM_ICONS = {
-  twitter:   X,           // X brand
-  linkedin:  Link2,       // professional links
-  github:    Code2,       // code
-  youtube:   PlayCircle,  // video / play
-  facebook:  Globe,       // global network
-  instagram: Camera,      // photos
-}
 
 /**
  * @param {{
@@ -78,8 +65,8 @@ export default function Footer({locale, brand = 'YourBrand', description, social
           {socialProfiles?.length ? (
             <div className="flex items-center gap-3">
               {socialProfiles.map(({platform, url}) => {
-                const Icon = PLATFORM_ICONS[platform] || Globe
                 const label = platform.charAt(0).toUpperCase() + platform.slice(1)
+                const hasBrand = SUPPORTED_BRANDS.includes(platform)
                 return (
                   <a
                     key={platform}
@@ -89,7 +76,11 @@ export default function Footer({locale, brand = 'YourBrand', description, social
                     aria-label={label}
                     className="w-8 h-8 bg-tertiary hover:bg-primary/20 hover:text-primary rounded-md flex items-center justify-center transition-colors"
                   >
-                    <Icon className="w-4 h-4" />
+                    {hasBrand ? (
+                      <SocialBrandIcon platform={platform} className="w-4 h-4" />
+                    ) : (
+                      <Link2 className="w-4 h-4" />
+                    )}
                   </a>
                 )
               })}

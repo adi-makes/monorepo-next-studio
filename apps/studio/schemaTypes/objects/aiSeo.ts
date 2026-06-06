@@ -2,10 +2,12 @@ import {defineType, defineField} from 'sanity'
 import {createCharacterCount} from '../components/CharacterCount'
 
 /**
- * AI search optimization object — reused by every major content type.
+ * AI search optimisation object — reused by every major content type.
  * Powers Google AI Overviews, ChatGPT Search, Perplexity, Gemini, Claude and
- * voice assistants, plus the frontend's Quick Answer / Key Takeaways sections
- * and Speakable JSON-LD.
+ * voice assistants, plus the frontend's Quick Answer / Key Takeaways sections.
+ *
+ * Speakable schema is auto-generated from the Quick Answer field — no
+ * separate speakable input is needed.
  */
 export const aiSeo = defineType({
   name: 'aiSeo',
@@ -18,42 +20,18 @@ export const aiSeo = defineType({
       title: 'Quick Answer',
       type: 'text',
       rows: 3,
-      description: '50–80 words. The direct answer surfaced by AI search engines.',
+      description:
+        '50–80 words. The direct answer surfaced by AI search engines (Google AI Overviews, ChatGPT, Perplexity). Required. ' +
+        'Also used as the Speakable schema content for voice assistants — write it in clear, spoken-word sentences.',
       components: {input: createCharacterCount({recommendedMin: 250, recommendedMax: 500})},
-    }),
-    defineField({
-      name: 'summary',
-      title: 'Summary',
-      type: 'text',
-      rows: 4,
-      description: 'Concise summary that helps AI understand the content.',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'keyTakeaways',
       title: 'Key Takeaways',
       type: 'array',
       of: [{type: 'string'}],
-      description: 'Rendered as a highlighted list at the top of articles.',
-    }),
-    defineField({
-      name: 'commonQuestions',
-      title: 'Common Questions',
-      type: 'faqList',
-      description: 'Question/answer pairs optimized for AI and voice search.',
-    }),
-    defineField({
-      name: 'speakableContent',
-      title: 'Speakable Content',
-      type: 'text',
-      rows: 3,
-      description: 'Sentences suited to voice playback. Generates Speakable schema.',
-    }),
-    defineField({
-      name: 'aiNotes',
-      title: 'AI Notes (internal)',
-      type: 'text',
-      rows: 2,
-      description: 'Editorial notes — never rendered.',
+      description: 'Optional. Rendered as a highlighted list at the top of the article.',
     }),
   ],
 })

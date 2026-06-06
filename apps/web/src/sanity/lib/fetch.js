@@ -11,7 +11,7 @@
 
 import {draftMode} from 'next/headers'
 import {client} from './client'
-import {readToken, studioUrl, isSanityConfigured} from './api'
+import {readToken, studioUrl, isSanityConfigured} from './config'
 
 // A token-bearing client that reads drafts, used only when Draft Mode is on.
 // stega encodes studio URLs into content strings so Visual Editing overlays

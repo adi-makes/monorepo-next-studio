@@ -15,47 +15,56 @@ export const imageFields = `{
   crop
 }`
 
-/** SEO object projection. */
+/**
+ * SEO object projection.
+ * metaTitle / metaDescription / ogImage (shareImage) cover all platforms —
+ * Google, OpenGraph, and Twitter — from a single set of inputs.
+ */
 export const seoFields = `{
   metaTitle, metaDescription, canonicalUrl,
-  ogTitle, ogDescription, "ogImage": ogImage${imageFields},
-  twitterTitle, twitterDescription, "twitterImage": twitterImage${imageFields},
-  robots
+  "ogImage": ogImage${imageFields}
 }`
 
 /** AI SEO object projection. */
 export const aiSeoFields = `{
-  quickAnswer, summary, keyTakeaways, commonQuestions, speakableContent
+  quickAnswer, keyTakeaways
 }`
 
-/** Schema config projection. */
+/**
+ * Author projection — full, for E-E-A-T and the author byline.
+ * Includes all fields needed for the Person JSON-LD schema and the
+ * clickable author link (/author/[slug]).
+ */
+export const authorFields = `{
+  _id, _type, name, "slug": slug.current, entityType, role, worksFor, link, description,
+  "bio": bio[]{
+    ...,
+    _type == "image" => {
+      ...,
+      "url": asset->url,
+      "lqip": asset->metadata.lqip,
+      "dimensions": asset->metadata.dimensions
+    }
+  },
+  "image": image${imageFields}, socials
+}`
+
+/** Category projection — name, slug, description only. */
+export const categoryFields = `{
+  _id, _type, name, "slug": slug.current, description
+}`
+
+/** Schema config projection (used by site settings). */
 export const schemaConfigFields = `{
   primarySchemaType, enableFaqSchema, enableSpeakable,
   enableBreadcrumb, enableVideoSchema, enableImageSchema
 }`
 
-/** Social defaults projection. */
+/** Social defaults projection (used by site settings). */
 export const socialDefaultsFields = `{
   "ogImage": ogImage${imageFields},
   "twitterImage": twitterImage${imageFields},
   twitterHandle
-}`
-
-/** Author projection (full, for E-E-A-T). */
-export const authorFields = `{
-  _id, _type, name, "slug": slug.current, role, bio, expertise, credentials,
-  "image": image${imageFields}, socials
-}`
-
-/** Category projection including inheritable defaults. */
-export const categoryFields = `{
-  _id, _type, name, "slug": slug.current, description,
-  "image": image${imageFields},
-  "seoDefaults": seoDefaults${seoFields},
-  "aiSeoDefaults": aiSeoDefaults${aiSeoFields},
-  "schemaDefaults": schemaDefaults${schemaConfigFields},
-  faqDefaults,
-  "socialDefaults": socialDefaults${socialDefaultsFields}
 }`
 
 /** Resolve an internal reference (link / cta) to {_type, slug}. */
@@ -66,8 +75,6 @@ const linkResolve = `{
 
 /**
  * Portable Text body with resolved internal links and dereferenced media.
- * Annotations and link-bearing blocks get their reference resolved to a slug
- * so the frontend can build live URLs via resolveHref().
  */
 export const bodyFields = `body[]{
   ...,

@@ -5,7 +5,7 @@
 // anywhere else FAQs should appear. FAQPage JSON-LD is injected by the page.
 // =============================================================================
 
-import FaqAccordion from './FaqAccordion'
+import FAQAccordion from './FAQAccordion'
 
 /**
  * Reusable visual FAQ section (landing + blog + page builder). The FAQPage
@@ -27,7 +27,7 @@ export default function FAQSection({
           <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-2">{heading}</h2>
           {intro ? <p className="mt-3 text-slate-500">{intro}</p> : null}
         </div>
-        <FaqAccordion faqs={faqs} />
+        <FAQAccordion faqs={faqs} />
       </div>
     </section>
   )

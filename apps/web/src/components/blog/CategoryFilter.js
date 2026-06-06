@@ -73,12 +73,14 @@ export default function CategoryFilter({posts = [], categories = [], locale}) {
         </div>
       )}
 
-      {/* Post grid */}
+      {/* Post grid — first 3 cards get priority loading (above-the-fold LCP) */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {visible.length === 0 ? (
           <BlogEmptyState />
         ) : (
-          visible.map((post) => <BlogCard key={post._id} post={post} locale={locale} />)
+          visible.map((post, i) => (
+            <BlogCard key={post._id} post={post} locale={locale} priority={i < 3} />
+          ))
         )}
       </div>
 

@@ -1,8 +1,9 @@
 import {defineType, defineField} from 'sanity'
 
 /**
- * Per-document redirect behaviour for slug history. When enabled, requests to
- * a document's old slugs are redirected to the current slug by the frontend.
+ * Per-document redirect behaviour for slug history. Old slugs are always
+ * redirected to the current slug. Toggle between 301 (permanent, default)
+ * and 302 (temporary) as needed.
  */
 export const redirectSettings = defineType({
   name: 'redirectSettings',
@@ -15,13 +16,14 @@ export const redirectSettings = defineType({
       title: 'Redirect old slugs to current slug',
       type: 'boolean',
       initialValue: true,
+      hidden: true,
     }),
     defineField({
       name: 'permanent',
-      title: 'Permanent (301)',
+      title: 'Use 301 (Permanent) redirect',
       type: 'boolean',
       initialValue: true,
-      description: 'On = 301 (permanent). Off = 302 (temporary).',
+      description: 'On = 301 permanent (default, recommended for SEO). Off = 302 temporary.',
     }),
   ],
 })

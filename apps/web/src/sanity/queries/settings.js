@@ -16,5 +16,6 @@ export const SITE_SETTINGS_QUERY = `*[_type == "siteSettings"][0]{
   "defaultSchemaConfig": defaultSchemaConfig${schemaConfigFields},
   "socialDefaults": socialDefaults${socialDefaultsFields},
   socialProfiles,
+  services[]{name, description, url},
   analytics
 }`

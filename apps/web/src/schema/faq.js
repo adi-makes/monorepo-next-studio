@@ -1,3 +1,9 @@
+// =============================================================================
+// FAQPage schema — generates a schema.org/FAQPage node from an array of
+// {question, answer} pairs. Auto-detected by buildPostSchemas (blog posts with
+// inline FAQs) and buildPageSchemas (landing pages with selectedFaqs).
+// =============================================================================
+
 const CONTEXT = 'https://schema.org'
 
 /**

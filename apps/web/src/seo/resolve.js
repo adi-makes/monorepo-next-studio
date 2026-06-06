@@ -1,81 +1,95 @@
 // ============================================================================
-// Inheritance resolvers — Site Settings -> Category Defaults -> Document.
-// Every page builds its effective SEO / AI SEO / schema / FAQ / social from
-// these so editors configure values once at the highest sensible level.
+// Inheritance resolvers — Site Settings -> Document.
+// Category-level defaults were removed; inheritance is now Site -> Document.
+//
+// SEO: metaTitle / metaDescription / ogImage feed all platforms (Google,
+// OpenGraph, Twitter) — no separate OG/Twitter fields needed.
 // ============================================================================
 
-/** First defined (non-null/undefined) value. */
+/** First defined (non-null/undefined/empty) value. */
 function firstDefined(...vals) {
   for (const v of vals) if (v !== undefined && v !== null && v !== '') return v
   return undefined
 }
 
 /**
- * @param {{settings?:any, category?:any, doc?:any}} ctx
+ * Resolve the effective SEO values for a page.
+ * ogTitle / twitterTitle / ogDescription / twitterDescription all derive from
+ * metaTitle / metaDescription — editors enter values once.
+ *
+ * @param {{settings?:any, doc?:any}} ctx
  */
-export function resolveSeo({settings, category, doc} = {}) {
+export function resolveSeo({settings, doc} = {}) {
   settings = settings || {}
-  category = category || {}
   doc = doc || {}
   const s = settings.defaultSeo || {}
-  const c = category.seoDefaults || {}
   const d = doc.seo || {}
   const siteSocial = settings.socialDefaults || {}
-  const catSocial = category.socialDefaults || {}
+
+  const metaTitle = firstDefined(d.metaTitle, s.metaTitle)
+  const metaDescription = firstDefined(d.metaDescription, s.metaDescription, settings.description)
+  // ogImage / shareImage: prefer the post's dedicated SEO image, then the
+  // featured image, then the site-wide default
+  const ogImage = firstDefined(d.ogImage, doc.featuredImage, s.ogImage, siteSocial.ogImage)
 
   return {
-    metaTitle: firstDefined(d.metaTitle, c.metaTitle, s.metaTitle),
-    metaDescription: firstDefined(d.metaDescription, c.metaDescription, s.metaDescription, doc.excerpt, settings.description),
-    canonicalUrl: d.canonicalUrl, // canonical is document-specific
-    ogTitle: firstDefined(d.ogTitle, c.ogTitle, s.ogTitle),
-    ogDescription: firstDefined(d.ogDescription, c.ogDescription, s.ogDescription),
-    ogImage: firstDefined(d.ogImage, doc.featuredImage, c.ogImage, catSocial.ogImage, s.ogImage, siteSocial.ogImage),
-    twitterTitle: firstDefined(d.twitterTitle, c.twitterTitle, s.twitterTitle),
-    twitterDescription: firstDefined(d.twitterDescription, c.twitterDescription, s.twitterDescription),
-    twitterImage: firstDefined(d.twitterImage, catSocial.twitterImage, s.twitterImage, siteSocial.twitterImage),
-    twitterHandle: firstDefined(catSocial.twitterHandle, siteSocial.twitterHandle),
-    robots: d.robots || c.robots || s.robots || {},
+    metaTitle,
+    metaDescription,
+    canonicalUrl: d.canonicalUrl,
+    // OG and Twitter reuse the same values — no duplication required
+    ogTitle: metaTitle,
+    ogDescription: metaDescription,
+    ogImage,
+    twitterTitle: metaTitle,
+    twitterDescription: metaDescription,
+    twitterImage: firstDefined(d.ogImage, doc.featuredImage, siteSocial.twitterImage, s.ogImage),
+    twitterHandle: siteSocial.twitterHandle,
+    // robots: all pages indexed and followed by default (no noindex/nofollow)
+    robots: {},
   }
 }
 
-export function resolveAiSeo({settings, category, doc} = {}) {
-  settings = settings || {}
-  category = category || {}
+/**
+ * Resolve the effective AI SEO values.
+ * quickAnswer and keyTakeaways are the only consumer-visible fields.
+ *
+ * @param {{doc?:any}} ctx
+ */
+export function resolveAiSeo({doc} = {}) {
   doc = doc || {}
-  const s = settings.defaultAiSeo || {}
-  const c = category.aiSeoDefaults || {}
   const d = doc.aiSeo || {}
   return {
-    quickAnswer: firstDefined(d.quickAnswer, c.quickAnswer),
-    summary: firstDefined(d.summary, c.summary, s.summary),
-    keyTakeaways: (d.keyTakeaways && d.keyTakeaways.length ? d.keyTakeaways : c.keyTakeaways) || [],
-    commonQuestions: (d.commonQuestions && d.commonQuestions.length ? d.commonQuestions : c.commonQuestions) || [],
-    speakableContent: firstDefined(d.speakableContent, c.speakableContent),
+    quickAnswer: d.quickAnswer || null,
+    keyTakeaways: Array.isArray(d.keyTakeaways) && d.keyTakeaways.length ? d.keyTakeaways : [],
   }
 }
 
-export function resolveSchemaConfig({settings, category, doc} = {}) {
+/**
+ * Resolve the effective schema config.
+ * Blog post schemas are fully auto-detected from content — this function
+ * provides the defaults used by the schema builder.
+ *
+ * @param {{settings?:any}} ctx
+ */
+export function resolveSchemaConfig({settings} = {}) {
   settings = settings || {}
-  category = category || {}
-  doc = doc || {}
   const s = settings.defaultSchemaConfig || {}
-  const c = category.schemaDefaults || {}
-  const d = doc.schemaConfig || {}
   return {
-    primarySchemaType: firstDefined(d.primarySchemaType, c.primarySchemaType, s.primarySchemaType),
-    enableFaqSchema: firstDefined(d.enableFaqSchema, c.enableFaqSchema, s.enableFaqSchema),
-    enableSpeakable: firstDefined(d.enableSpeakable, c.enableSpeakable, s.enableSpeakable),
-    enableBreadcrumb: firstDefined(d.enableBreadcrumb, c.enableBreadcrumb, s.enableBreadcrumb, true),
-    enableVideoSchema: firstDefined(d.enableVideoSchema, c.enableVideoSchema, s.enableVideoSchema),
-    enableImageSchema: firstDefined(d.enableImageSchema, c.enableImageSchema, s.enableImageSchema),
+    primarySchemaType: s.primarySchemaType || 'blogPosting',
+    enableBreadcrumb: true,       // always on
+    enableFaqSchema: true,        // auto-detected from faq content
+    enableSpeakable: true,        // auto-detected from quickAnswer
+    enableVideoSchema: true,      // auto-detected from YouTube blocks in body
+    enableImageSchema: false,     // off by default
   }
 }
 
-/** Document FAQ, falling back to category FAQ defaults. */
-export function resolveFaq({category, doc} = {}) {
-  category = category || {}
+/**
+ * Document FAQ array. Filters out empty/dangling entries — landing pages
+ * reference shared faqItem docs, so a deleted reference dereferences to null.
+ */
+export function resolveFaq({doc} = {}) {
   doc = doc || {}
-  if (Array.isArray(doc.faq) && doc.faq.length) return doc.faq
-  if (Array.isArray(category.faqDefaults) && category.faqDefaults.length) return category.faqDefaults
-  return []
+  if (!Array.isArray(doc.faq)) return []
+  return doc.faq.filter((f) => f && f.question && f.answer)
 }

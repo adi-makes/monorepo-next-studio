@@ -14,6 +14,7 @@ const TYPE_MAP = {
 
 /**
  * Article / BlogPosting JSON-LD with embedded author (Person) and publisher.
+ * Description uses metaDescription from SEO, falling back to the post title.
  * @param {{post:any, url:string, settings?:any, type?:string, locale?:string}} opts
  */
 export function generateArticleSchema({post, url, settings = {}, type = 'blogPosting', locale = 'en'}) {
@@ -27,9 +28,14 @@ export function generateArticleSchema({post, url, settings = {}, type = 'blogPos
     mainEntityOfPage: {'@type': 'WebPage', '@id': url},
     url,
   }
-  if (post.excerpt) schema.description = post.excerpt
+
+  // Use SEO meta description (entered once, used everywhere)
+  const description = post.seo?.metaDescription
+  if (description) schema.description = description
+
   const img = imageUrl(post.featuredImage, {width: 1200})
   if (img) schema.image = [img]
+
   if (post.publishedAt) schema.datePublished = post.publishedAt
   schema.dateModified = post.updatedAt || post.publishedAt
 
@@ -42,5 +48,6 @@ export function generateArticleSchema({post, url, settings = {}, type = 'blogPos
     if (logo) publisher.logo = {'@type': 'ImageObject', url: logo}
     schema.publisher = publisher
   }
+
   return schema
 }

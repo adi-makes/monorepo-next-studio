@@ -29,7 +29,7 @@ export default function Breadcrumbs({items = []}) {
                   {item.name}
                 </Link>
               )}
-              {!last ? <ChevronRight className="w-3.5 h-3.5 text-slate-300 shrink-0" /> : null}
+              {!last ? <ChevronRight aria-hidden="true" className="w-3.5 h-3.5 text-slate-300 shrink-0" /> : null}
             </li>
           )
         })}

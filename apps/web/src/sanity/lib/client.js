@@ -6,7 +6,7 @@
 // =============================================================================
 
 import {createClient} from 'next-sanity'
-import {projectId, dataset, apiVersion, isSanityConfigured} from './api'
+import {projectId, dataset, apiVersion, isSanityConfigured} from './config'
 
 // Real client when configured; otherwise a stub whose fetch() resolves to null
 // so builds and renders never crash before Sanity env vars are set (e.g. on a

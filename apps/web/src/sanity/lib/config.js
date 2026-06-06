@@ -1,8 +1,11 @@
-// ============================================================================
-// Sanity environment — single source of truth for project config.
-// projectId / dataset / apiVersion are safe to expose (NEXT_PUBLIC_*).
-// The read token and secrets stay server-side.
-// ============================================================================
+// =============================================================================
+// Sanity project configuration — single source of truth for all Sanity env
+// vars. Imported by client.js and fetch.js; never read process.env directly
+// in those files.
+//
+//   Safe to expose (NEXT_PUBLIC_*): projectId, dataset, apiVersion, studioUrl
+//   Server-only (never sent to browser): readToken
+// =============================================================================
 
 export const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
 export const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET || 'production'

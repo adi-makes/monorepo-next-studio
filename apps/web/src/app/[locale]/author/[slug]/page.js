@@ -31,7 +31,7 @@ export async function generateMetadata({params}) {
   if (!author) return {}
   return buildMetadata({
     settings,
-    doc: {title: author.name, seo: {metaDescription: author.bio || `Articles by ${author.name}`}},
+    doc: {title: author.name, seo: {metaDescription: author.description || `Articles by ${author.name}`}},
     path: `/author/${slug}`,
     locale,
   })
@@ -57,15 +57,27 @@ export default async function AuthorPage({params}) {
       <Container>
         <Breadcrumbs items={[{name: 'Home', href: localizedPath(locale, '/')}, {name: author.name}]} />
 
-        <div className="max-w-2xl mb-12">
-          <AuthorCard author={author} locale={locale} />
-        </div>
+        <div className="mt-8 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-12">
+          {/* Profile sidebar */}
+          <aside className="mb-12 lg:mb-0">
+            <AuthorCard author={author} locale={locale} />
+          </aside>
 
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">Articles by {author.name}</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map((post) => (
-            <BlogCard key={post._id} post={post} locale={locale} />
-          ))}
+          {/* Recent posts fill the main column */}
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-6">
+              {posts.length ? `Articles by ${author.name}` : null}
+            </h2>
+            {posts.length ? (
+              <div className="grid sm:grid-cols-2 gap-6">
+                {posts.map((post) => (
+                  <BlogCard key={post._id} post={post} locale={locale} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-400">No articles published yet.</p>
+            )}
+          </div>
         </div>
       </Container>
 

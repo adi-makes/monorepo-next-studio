@@ -1,3 +1,9 @@
+// =============================================================================
+// ImageObject schema — wraps a Sanity image asset in schema.org/ImageObject.
+// Used as a nested object inside BlogPosting, Product, HowTo, etc.
+// Call with `withContext: false` when embedding inside another schema node.
+// =============================================================================
+
 import {imageUrl} from '@/sanity/lib/image'
 
 const CONTEXT = 'https://schema.org'

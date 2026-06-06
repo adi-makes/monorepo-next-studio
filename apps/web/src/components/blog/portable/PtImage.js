@@ -19,6 +19,7 @@ export default function PtImage({value}) {
         height={h}
         className="rounded-xl w-full h-auto"
         sizes="(max-width: 768px) 100vw, 768px"
+        loading="lazy"
         placeholder={value.lqip ? 'blur' : 'empty'}
         blurDataURL={value.lqip || undefined}
       />

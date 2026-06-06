@@ -31,10 +31,9 @@ export default async function sitemap() {
   // ── Core routes (always present) ──────────────────────────────────────────
   add('/')
   add('/blog')
-  // TODO: add more code-based landing pages here as you create them:
+  add('/faq')
   // add('/about')
   // add('/contact')
-  // add('/services')
 
   // ── Dynamic Sanity content ────────────────────────────────────────────────
   for (const p of posts || []) add(`/blog/${p.slug}`)

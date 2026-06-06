@@ -7,6 +7,7 @@
 import {notFound} from 'next/navigation'
 import {draftMode} from 'next/headers'
 import {VisualEditing} from 'next-sanity/visual-editing'
+import ReactDOM from 'react-dom'
 import '../globals.css'
 
 import Navbar from '@/components/shared/Navbar'
@@ -43,6 +44,10 @@ export default async function LocaleLayout({children, params}) {
   const s = settings || {}
   const brand = s.name
 
+  // Preconnect to Sanity image CDN so image requests have a warmed connection.
+  // ReactDOM.preconnect() is the Next 16-recommended way (emits <link rel="preconnect">).
+  ReactDOM.preconnect('https://cdn.sanity.io')
+
   return (
     <html lang={locale} dir={isRtlLocale(locale) ? 'rtl' : 'ltr'}>
       <body
@@ -51,8 +56,18 @@ export default async function LocaleLayout({children, params}) {
       >
         {draft.isEnabled ? <DraftModeBanner /> : null}
         <JsonLd data={[generateOrganizationSchema(s), generateWebsiteSchema(s)]} />
+        {/* Skip to main content — helps keyboard/screen-reader users bypass the nav */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-white focus:rounded-md focus:text-sm focus:font-medium"
+        >
+          Skip to main content
+        </a>
         <Navbar locale={locale} brand={brand} />
-        {children}
+        {/* #main-content anchor for the skip link above — neutral div, page renders its own <main> */}
+        <div id="main-content" tabIndex={-1} className="outline-none">
+          {children}
+        </div>
         <Footer locale={locale} brand={brand} description={s.description} socialProfiles={s.socialProfiles} />
         <Analytics analytics={s.analytics} />
         {draft.isEnabled ? <VisualEditing /> : null}

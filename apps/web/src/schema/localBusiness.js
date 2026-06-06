@@ -1,3 +1,10 @@
+// =============================================================================
+// LocalBusiness schema — extends Organization with physical business fields:
+// address (PostalAddress), telephone, and geo coordinates. Reads brand info
+// from Site Settings. Pass `extra` with address/telephone/geo to the function.
+// Set primarySchemaType to "localBusiness" in Sanity schemaConfig to activate.
+// =============================================================================
+
 import {SITE_URL} from '@/constants/site'
 import {imageUrl} from '@/sanity/lib/image'
 

@@ -1,135 +1,102 @@
-import {defineField, defineType} from 'sanity'
+import {defineField, defineType, defineArrayMember} from 'sanity' // defineArrayMember used by selectedFaqs
+import {SeoChecklist} from '../components/SeoChecklist'
+import {SeoPreview} from '../components/SeoPreview'
+import {SchemaPreview} from '../components/SchemaPreview'
 
 /**
  * Landing Page SEO & Metadata
  *
- * Lightweight document for managing SEO, metadata, and JSON-LD schema for
- * landing pages that are built in code (not CMS-driven content).
+ * Lightweight document for managing SEO, AI SEO, FAQ, and structured data for
+ * code-built landing pages (Home, About, Contact, FAQ, etc.).
  *
- * Examples:
- * - Home page (/en, /es, /fr, etc.)
- * - About page (/about)
- * - Contact page (/contact)
- * - Services page (/services)
- * - Pricing page (/pricing)
+ * Groups mirror the blog post layout:
+ *   Content → SEO (merged SEO + AI SEO) → Schema (auto) → Settings
  *
- * Editors manage: meta title/description, OG images, canonical URL, schema type,
- * FAQ, quick answer, and speakable content — without touching code.
+ * Slug is user-set because it IS the route path ("/" = home, "faq" = /faq, etc.)
  */
 export const landingPageSeo = defineType({
   name: 'landingPageSeo',
   title: 'Landing Page SEO',
   type: 'document',
   groups: [
-    {name: 'content', title: 'Identification & SEO', default: true},
-    {name: 'ai', title: 'AI SEO'},
-    {name: 'schema', title: 'Schema Config'},
+    {name: 'content', title: 'Content', default: true},
+    {name: 'seo', title: 'SEO'},
+    {name: 'schema', title: 'Schema'},
     {name: 'settings', title: 'Settings'},
   ],
   fields: [
-    // ─── Identification (group: content) ────────────────────────────────
+    // ── Content ──────────────────────────────────────────────────────────────
     defineField({
       name: 'title',
       title: 'Page Title / Identifier',
-      description: 'Human-readable name for this landing page (e.g., "Home", "About", "Contact")',
       type: 'string',
-      validation: (Rule) => Rule.required(),
       group: 'content',
+      description: 'Human-readable name (e.g. "Home", "About", "FAQ"). Not shown publicly.',
+      validation: (Rule) => Rule.required(),
     }),
-
     defineField({
       name: 'slug',
-      title: 'Page Slug / Route',
-      description:
-        'URL path identifier: "/" for homepage, "about" for /about, "contact" for /contact, etc. (no slashes)',
+      title: 'Page Route',
       type: 'slug',
-      options: {
-        source: 'title',
-      },
+      group: 'content',
+      options: {source: 'title'},
+      description: 'URL path: "/" for homepage, "about" for /about, "faq" for /faq. (no leading slash except for home)',
       validation: (Rule) => Rule.required(),
-      group: 'content',
     }),
-
-    // ─── SEO & Metadata (group: content) ────────────────────────────────
     defineField({
-      name: 'seo',
-      title: 'SEO & Meta Tags',
-      description: 'Meta title, description, canonical URL, OG image, Twitter card, robots directives',
-      type: 'seo',
+      name: 'selectedFaqs',
+      title: 'FAQ Items',
+      type: 'array',
       group: 'content',
+      of: [defineArrayMember({type: 'reference', to: [{type: 'faqItem'}]})],
+      description:
+        'Pick which FAQ items to show on this page from the FAQ Items list. Drives both the FAQ section and FAQPage JSON-LD. Used on every landing page including /faq — only the FAQs you select here appear.',
     }),
+    // ── SEO (SEO & Meta + AI SEO merged) ─────────────────────────────────────
+    defineField({name: 'seo', title: 'SEO & Meta', type: 'seo', group: 'seo'}),
+    defineField({name: 'aiSeo', title: 'AI SEO', type: 'aiSeo', group: 'seo'}),
+    defineField({name: 'seoChecklist', title: 'SEO Checklist', type: 'string', group: 'seo', components: {input: SeoChecklist}}),
+    defineField({name: 'seoPreview', title: 'Search & Social Preview', type: 'string', group: 'seo', components: {input: SeoPreview}}),
 
-    // ─── AI SEO (group: ai) ─────────────────────────────────────────────
+    // ── Schema (auto-detected from content) ──────────────────────────────────
     defineField({
-      name: 'aiSeo',
-      title: 'AI SEO',
-      description: 'Quick answer, summary, key takeaways, speakable content for voice search',
-      type: 'aiSeo',
-      group: 'ai',
+      name: 'schemaPreview',
+      title: 'Schema Output',
+      type: 'string',
+      group: 'schema',
+      components: {input: SchemaPreview},
     }),
-
-    // ─── Schema Config (group: schema) ──────────────────────────────────
     defineField({
       name: 'schemaConfig',
-      title: 'JSON-LD Schema',
-      description:
-        'Configure which structured data schemas to generate: Organization, WebSite, LocalBusiness, FAQPage, BreadcrumbList, etc.',
+      title: 'Primary Schema Type',
       type: 'schemaConfig',
       group: 'schema',
+      description: 'Select the schema.org type that best describes this page. All other schemas (FAQ, Breadcrumb, Speakable) are auto-detected from content.',
     }),
 
-    // ─── Optional FAQ (group: schema) ───────────────────────────────────
-    defineField({
-      name: 'faq',
-      title: 'FAQ Items (Optional)',
-      description: 'Add FAQ items for this landing page. If provided, FAQPage schema will be generated.',
-      type: 'faqList',
-      group: 'schema',
-    }),
-
-    // ─── Settings (group: settings) ────────────────────────────────────
+    // ── Settings ─────────────────────────────────────────────────────────────
     defineField({
       name: 'publishedAt',
-      title: 'Published At',
+      title: 'Published Date',
       type: 'datetime',
       group: 'settings',
+      initialValue: () => new Date().toISOString(),
     }),
-
     defineField({
       name: 'updatedAt',
-      title: 'Updated At',
-      description: 'Last modified date (updated automatically when published)',
+      title: 'Updated Date',
       type: 'datetime',
       group: 'settings',
-    }),
-
-    defineField({
-      name: 'visibility',
-      title: 'Visibility',
-      description: 'Public or hidden from search (robots directives)',
-      type: 'string',
-      options: {
-        list: [
-          {title: 'Public (index, follow)', value: 'public'},
-          {title: 'Hidden (noindex, nofollow)', value: 'hidden'},
-        ],
-      },
-      initialValue: 'public',
-      group: 'settings',
+      initialValue: () => new Date().toISOString(),
     }),
   ],
 
   preview: {
-    select: {
-      title: 'title',
-      slug: 'slug.current',
-      visibility: 'visibility',
-    },
-    prepare({title, slug, visibility}) {
-      const icon = visibility === 'hidden' ? '🚫' : '✅'
+    select: {title: 'title', slug: 'slug.current'},
+    prepare({title, slug}) {
       return {
-        title: `${icon} ${title}`,
-        subtitle: `/${slug === '/' ? '' : slug}`,
+        title,
+        subtitle: `/${slug === '/' ? '' : (slug || '')}`,
       }
     },
   },

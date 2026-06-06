@@ -14,9 +14,9 @@ import {formatDate, isoDate} from '@/utils/format'
 
 /**
  * Blog listing card. Builds its own locale-prefixed href.
- * @param {{post:any, locale?:string}} props
+ * @param {{post:any, locale?:string, priority?:boolean}} props
  */
-export default function BlogCard({post, locale = 'en'}) {
+export default function BlogCard({post, locale = 'en', priority = false}) {
   if (!post?.slug) return null
   const href = localizedPath(locale, `/blog/${post.slug}`)
   const cover = imageUrl(post.featuredImage, {width: 600, height: 360, fit: 'crop'})
@@ -31,6 +31,8 @@ export default function BlogCard({post, locale = 'en'}) {
             fill
             className="object-cover group-hover:scale-[1.02] transition-transform"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -61,7 +63,8 @@ export default function BlogCard({post, locale = 'en'}) {
 
         <Link href={href} className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
           Read more
-          <ChevronRight className="w-3.5 h-3.5" />
+          <span className="sr-only"> — {post.title}</span>
+          <ChevronRight aria-hidden="true" className="w-3.5 h-3.5" />
         </Link>
       </div>
     </article>

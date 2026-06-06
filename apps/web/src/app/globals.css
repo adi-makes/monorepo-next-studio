@@ -13,3 +13,26 @@
   --color-secondary: #0f172a;
   --color-tertiary:  #1e293b;
 }
+
+/* =============================================================================
+ * Accessibility
+ * sr-only and ds-speakable are used for screen-reader / voice / AI targets.
+ * #main-content is the skip-link target — suppress the focus ring (the ring is
+ * shown on interactive elements only; the wrapper div is not interactive).
+ * ============================================================================= */
+#main-content:focus {
+  outline: none;
+}
+
+/* Speakable block — invisible to visual users, readable by voice assistants */
+.ds-speakable {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

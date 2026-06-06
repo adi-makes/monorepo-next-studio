@@ -1,19 +1,19 @@
 // =============================================================================
-// QuickAnswer — AI SEO "quick answer" box displayed at the top of blog posts.
-// The `.ds-speakable` class marks this section for Speakable JSON-LD schema.
-// Content comes from the post's `aiSeo.quickAnswer` field in Sanity.
+// QuickAnswer — AI / voice "quick answer" content. NOT shown visually: it exists
+// only to feed the Speakable JSON-LD schema (cssSelector `.ds-speakable`) so
+// voice assistants and AI search can read it. Rendered screen-reader-only.
+// Content comes from the document's `aiSeo.quickAnswer` field in Sanity.
 // =============================================================================
 
 /**
- * AI "Quick Answer" box. Carries the `ds-speakable` class so it can be targeted
- * by Speakable schema for voice assistants.
+ * Screen-reader-only Speakable target. Carries the `ds-speakable` class so the
+ * Speakable schema can resolve to it. Produces no visible UI.
  */
 export default function QuickAnswer({text}) {
   if (!text) return null
   return (
-    <div className="ds-speakable bg-primary/5 border border-primary/20 rounded-xl p-5 my-6">
-      <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">Quick Answer</p>
-      <p className="text-slate-700 leading-relaxed">{text}</p>
+    <div className="ds-speakable sr-only" data-speakable="quick-answer">
+      {text}
     </div>
   )
 }

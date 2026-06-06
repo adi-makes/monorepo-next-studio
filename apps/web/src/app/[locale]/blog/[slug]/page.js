@@ -16,7 +16,7 @@ import {
   SITE_SETTINGS_QUERY,
 } from '@/sanity/queries'
 import {buildMetadata} from '@/seo'
-import {resolveAiSeo, resolveSchemaConfig, resolveFaq} from '@/seo/resolve'
+import {resolveAiSeo, resolveFaq} from '@/seo/resolve'
 import {buildPostSchemas} from '@/schema'
 import {imageUrl} from '@/sanity/lib/image'
 import {extractHeadings} from '@/utils/portable-text'
@@ -71,9 +71,8 @@ export default async function BlogPostPage({params}) {
     notFound()
   }
 
-  const aiSeo = resolveAiSeo({settings, category: post.category, doc: post})
-  const schemaConfig = resolveSchemaConfig({settings, category: post.category, doc: post})
-  const faqs = resolveFaq({category: post.category, doc: post})
+  const aiSeo = resolveAiSeo({doc: post})
+  const faqs = resolveFaq({doc: post})
   const headings = post.tocEnabled === false ? [] : extractHeadings(post.body, [2, 3])
 
   let related = post.relatedPosts || []
@@ -95,7 +94,7 @@ export default async function BlogPostPage({params}) {
       : []),
     {name: post.title, url},
   ]
-  const schemas = buildPostSchemas({post, url, settings, schemaConfig, faqs, breadcrumbs, locale})
+  const schemas = buildPostSchemas({post, url, settings, faqs, breadcrumbs, locale})
 
   const cover = imageUrl(post.featuredImage, {width: 1200, height: 630, fit: 'crop'})
 
@@ -120,7 +119,7 @@ export default async function BlogPostPage({params}) {
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-2 mb-3">{post.title}</h1>
 
           <div className="flex items-center gap-3 mb-8">
-            {post.author ? <AuthorCard author={post.author} compact /> : null}
+            {post.author ? <AuthorCard author={post.author} compact locale={locale} /> : null}
             {post.publishedAt ? (
               <time className="text-slate-400 text-sm" dateTime={isoDate(post.publishedAt)}>
                 {formatDate(post.publishedAt)}
@@ -147,8 +146,6 @@ export default async function BlogPostPage({params}) {
           <PostBody body={post.body} locale={locale} />
 
           {faqs.length ? <FAQSection heading="Frequently Asked Questions" faqs={faqs} className="!py-10" /> : null}
-
-          {post.author ? <AuthorCard author={post.author} /> : null}
 
           <RelatedPosts posts={related} locale={locale} />
         </article>

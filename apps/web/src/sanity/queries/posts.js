@@ -1,5 +1,5 @@
 // =============================================================================
-// Blog post queries — listings, single post, slug history, related posts.
+// Blog post queries — listings, single post, slug history.
 // postCard: lightweight projection used in listing grids.
 // postFull: complete projection for the single-post page (author, body, SEO…).
 // =============================================================================
@@ -8,7 +8,6 @@ import {
   imageFields,
   seoFields,
   aiSeoFields,
-  schemaConfigFields,
   authorFields,
   categoryFields,
   bodyFields,
@@ -16,16 +15,16 @@ import {
 } from './fragments'
 
 /** Card-sized projection for listings. */
-const postCard = `{
-  _id, _type, title, "slug": slug.current, excerpt, publishedAt, featured,
+export const postCard = `{
+  _id, _type, title, "slug": slug.current, publishedAt, featured,
   "featuredImage": featuredImage${imageFields},
   "category": category->{_id, name, "slug": slug.current},
-  "author": author->{_id, name, "slug": slug.current, "image": image${imageFields}}
+  "author": author->{_id, name, "slug": slug.current, role, "image": image${imageFields}}
 }`
 
-/** Full projection for a single post page (with inheritance sources). */
+/** Full projection for a single post page. */
 const postFull = `{
-  _id, _type, title, "slug": slug.current, excerpt, tags, tocEnabled,
+  _id, _type, title, "slug": slug.current, tags, tocEnabled,
   publishedAt, updatedAt, oldSlugs,
   "featuredImage": featuredImage${imageFields},
   "author": author->${authorFields},
@@ -33,16 +32,8 @@ const postFull = `{
   ${bodyFields},
   faq,
   "seo": seo${seoFields},
-  "aiSeo": aiSeo${aiSeoFields},
-  "schemaConfig": schemaConfig${schemaConfigFields},
-  "relatedPosts": relatedPosts[]->{${postCardInner()}}
+  "aiSeo": aiSeo${aiSeoFields}
 }`
-
-function postCardInner() {
-  return `_id, _type, title, "slug": slug.current, excerpt, publishedAt,
-  "featuredImage": featuredImage${imageFields},
-  "category": category->{_id, name, "slug": slug.current}`
-}
 
 export const POSTS_QUERY = `*[_type == "blogPost" && ${liveFilter}] | order(featured desc, publishedAt desc) ${postCard}`
 
@@ -58,6 +49,6 @@ export const POST_SLUGS_QUERY = `*[_type == "blogPost" && ${liveFilter}]{ "slug"
 
 export const FEATURED_POSTS_QUERY = `*[_type == "blogPost" && featured == true && ${liveFilter}] | order(priority desc, publishedAt desc) ${postCard}`
 
-/** Related posts: explicit picks, else latest from the same category. */
+/** Related posts: latest from the same category, excluding current post. */
 export const RELATED_POSTS_QUERY = `*[_type == "blogPost" && _id != $id && category._ref == $categoryId && ${liveFilter}]
   | order(publishedAt desc) [0...3] ${postCard}`
