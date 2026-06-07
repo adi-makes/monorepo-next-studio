@@ -7,6 +7,12 @@ This repo is a two-app npm workspace:
 
 The repo is set up as a handoffable template. The goal is that another developer can clone it, fill in the env files, understand where each feature lives, and ship without tracing the whole codebase from scratch.
 
+## Detailed Docs
+
+- `AGENTS.md`: rules for agents and developers working on this boilerplate.
+- `ABOUT.md`: detailed folder and file structure reference.
+- `SETUP.md`: complete local setup, Sanity setup, cleanup, preview, revalidation, and deployment guide.
+
 ## Stack
 
 - Next.js 16.2.6
