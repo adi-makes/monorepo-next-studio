@@ -1,6 +1,6 @@
 'use client'
 // =============================================================================
-// CategoryFilter — client component that renders category chip filters on the
+// BlogCategoryFilter — client component that renders category chip filters on the
 // blog listing page. Reads ?category= from the URL and filters the post grid
 // client-side (no server round-trip). The parent server component fetches all
 // posts + categories at build time so the page stays statically cached.
@@ -12,6 +12,7 @@
 import {useSearchParams, useRouter, usePathname} from 'next/navigation'
 import BlogCard from './BlogCard'
 import BlogEmptyState from './BlogEmptyState'
+import {getMessages, t} from '@/messages'
 
 /**
  * @param {{
@@ -20,10 +21,11 @@ import BlogEmptyState from './BlogEmptyState'
  *   locale: string
  * }} props
  */
-export default function CategoryFilter({posts = [], categories = [], locale}) {
+export default function BlogCategoryFilter({posts = [], categories = [], locale}) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
+  const messages = getMessages(locale)
 
   const activeSlug = searchParams.get('category') || null
 
@@ -58,7 +60,7 @@ export default function CategoryFilter({posts = [], categories = [], locale}) {
             className={`${chipBase} ${!activeSlug ? chipActive : chipIdle}`}
             aria-pressed={!activeSlug}
           >
-            All
+            {t(messages, 'blog.allCategories')}
           </button>
           {categories.map((cat) => (
             <button
@@ -76,7 +78,7 @@ export default function CategoryFilter({posts = [], categories = [], locale}) {
       {/* Post grid — first 3 cards get priority loading (above-the-fold LCP) */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {visible.length === 0 ? (
-          <BlogEmptyState />
+          <BlogEmptyState locale={locale} />
         ) : (
           visible.map((post, i) => (
             <BlogCard key={post._id} post={post} locale={locale} priority={i < 3} />
@@ -87,10 +89,10 @@ export default function CategoryFilter({posts = [], categories = [], locale}) {
       {/* Post count hint when filtered */}
       {activeSlug && visible.length > 0 && (
         <p className="text-center text-sm text-slate-400 mt-8">
-          {visible.length} {visible.length === 1 ? 'post' : 'posts'} in{' '}
-          <span className="text-primary font-medium">
-            {categories.find((c) => c.slug === activeSlug)?.name}
-          </span>
+          {t(messages, visible.length === 1 ? 'blog.postCountOne' : 'blog.postCountOther', {
+            count: visible.length,
+            category: categories.find((c) => c.slug === activeSlug)?.name || '',
+          })}
         </p>
       )}
     </>

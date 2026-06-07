@@ -9,6 +9,7 @@ import Link from 'next/link'
 import {Link2} from 'lucide-react'
 import SocialBrandIcon, {SUPPORTED_BRANDS} from './BrandIcons'
 import {localizedPath} from '@/i18n/routing'
+import {getMessages, t} from '@/messages'
 
 /**
  * @param {{
@@ -18,8 +19,10 @@ import {localizedPath} from '@/i18n/routing'
  *   socialProfiles?: {platform: string, url: string}[]
  * }} props
  */
-export default function Footer({locale, brand = 'YourBrand', description, socialProfiles = []}) {
+export default function Footer({locale, brand, description, socialProfiles = []}) {
   const year = new Date().getFullYear()
+  const messages = getMessages(locale)
+  const displayBrand = brand || t(messages, 'site.fallbackBrand')
 
   return (
     <footer className="bg-secondary text-slate-400">
@@ -31,7 +34,7 @@ export default function Footer({locale, brand = 'YourBrand', description, social
           <div className="flex-1">
             <Link href={localizedPath(locale, '/')} className="inline-flex items-center gap-2 mb-4">
               <div className="w-7 h-7 bg-primary rounded-md" />
-              <span className="text-white font-bold text-base">{brand}</span>
+              <span className="text-white font-bold text-base">{displayBrand}</span>
             </Link>
             {description ? (
               <p className="text-sm leading-relaxed max-w-xs">{description}</p>
@@ -40,16 +43,16 @@ export default function Footer({locale, brand = 'YourBrand', description, social
 
           {/* Navigation links */}
           <div>
-            <h3 className="text-white text-sm font-semibold mb-4">Navigate</h3>
+            <h3 className="text-white text-sm font-semibold mb-4">{t(messages, 'footer.navigate')}</h3>
             <ul className="space-y-2.5">
               <li>
                 <Link href={localizedPath(locale, '/blog')} className="text-sm hover:text-primary transition-colors">
-                  Blog
+                  {t(messages, 'nav.blog')}
                 </Link>
               </li>
               <li>
                 <Link href={localizedPath(locale, '/#faq')} className="text-sm hover:text-primary transition-colors">
-                  FAQ
+                  {t(messages, 'nav.faq')}
                 </Link>
               </li>
             </ul>
@@ -59,7 +62,7 @@ export default function Footer({locale, brand = 'YourBrand', description, social
 
         {/* Bottom bar: copyright + social icons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 text-xs">
-          <p>&copy; {year} {brand}. All rights reserved.</p>
+          <p>&copy; {year} {displayBrand}. {t(messages, 'footer.rights')}</p>
 
           {/* Social icons pulled from Sanity Site Settings → socialProfiles */}
           {socialProfiles?.length ? (

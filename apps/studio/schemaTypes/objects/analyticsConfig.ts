@@ -13,7 +13,6 @@ export const analyticsConfig = defineType({
     defineField({name: 'ga4Id', title: 'GA4 Measurement ID', type: 'string', description: 'e.g. G-XXXXXXX'}),
     defineField({name: 'gtmId', title: 'Google Tag Manager ID', type: 'string', description: 'e.g. GTM-XXXXXXX'}),
     defineField({name: 'plausibleDomain', title: 'Plausible Domain', type: 'string'}),
-    defineField({name: 'posthogKey', title: 'PostHog Project Key', type: 'string'}),
     defineField({name: 'clarityId', title: 'Microsoft Clarity ID', type: 'string'}),
   ],
 })

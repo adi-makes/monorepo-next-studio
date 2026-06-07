@@ -12,7 +12,7 @@ import Script from 'next/script'
  * CMS-driven analytics. Reads the `analytics` object from Site Settings and
  * mounts only the providers that have an ID. No IDs => renders nothing.
  *
- * @param {{analytics?: {ga4Id?:string, gtmId?:string, plausibleDomain?:string, posthogKey?:string, clarityId?:string}}} props
+ * @param {{analytics?: {ga4Id?:string, gtmId?:string, plausibleDomain?:string, clarityId?:string}}} props
  */
 export function Analytics({analytics}) {
   if (!analytics) return null

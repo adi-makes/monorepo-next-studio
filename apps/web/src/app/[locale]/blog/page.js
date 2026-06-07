@@ -3,7 +3,7 @@
 //
 // Architecture:
 //   - Server component fetches ALL posts + ALL categories at build time (ISR).
-//   - CategoryFilter (client component) reads ?category= from the URL and
+//   - BlogCategoryFilter (client component) reads ?category= from the URL and
 //     filters the post grid instantly with zero server round-trips.
 //
 // SEO:
@@ -17,13 +17,14 @@ import {Suspense} from 'react'
 import {sanityFetch} from '@/sanity/lib/fetch'
 import {POSTS_QUERY, ALL_CATEGORIES_QUERY, SITE_SETTINGS_QUERY} from '@/sanity/queries'
 import {buildMetadata} from '@/seo'
-import {generateBreadcrumbSchema, generateBlogListingSchema} from '@/schema'
-import CategoryFilter from '@/components/blog/CategoryFilter'
+import {generateBreadcrumbSchema, generateBlogListingSchema} from '@/seo/schema'
+import BlogCategoryFilter from '@/components/blog/BlogCategoryFilter'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import JsonLd from '@/components/shared/JsonLd'
 import Container from '@/components/ui/Container'
 import {SITE_URL} from '@/constants/site'
 import {localizedPath} from '@/i18n/routing'
+import {getMessages, t} from '@/messages'
 
 // ---------------------------------------------------------------------------
 // Metadata
@@ -31,12 +32,13 @@ import {localizedPath} from '@/i18n/routing'
 
 export async function generateMetadata({params}) {
   const {locale} = await params
+  const messages = getMessages(locale)
   const settings = (await sanityFetch({query: SITE_SETTINGS_QUERY, tags: ['siteSettings']})) || {}
   return buildMetadata({
     settings,
     doc: {
-      title: 'Blog',
-      seo: {metaDescription: 'Articles, guides, and deep-dives on modern web development and publishing.'},
+      title: t(messages, 'blog.title'),
+      seo: {metaDescription: t(messages, 'blog.description')},
     },
     path: '/blog',
     locale,
@@ -49,10 +51,11 @@ export async function generateMetadata({params}) {
 
 export default async function BlogPage({params}) {
   const {locale} = await params
+  const messages = getMessages(locale)
 
   // Fetch all posts + categories in parallel (both statically cached via ISR).
   const [posts, categories] = await Promise.all([
-    sanityFetch({query: POSTS_QUERY, tags: ['blogPost', 'author', 'category']}),
+    sanityFetch({query: POSTS_QUERY, params: {locale}, tags: ['blogPost', 'author', 'category']}),
     sanityFetch({query: ALL_CATEGORIES_QUERY, tags: ['category']}),
   ])
 
@@ -61,16 +64,16 @@ export default async function BlogPage({params}) {
 
   // Breadcrumb items for JSON-LD.
   const crumbs = [
-    {name: 'Home', url: `${SITE_URL}${localizedPath(locale, '/')}`},
-    {name: 'Blog', url: `${SITE_URL}${localizedPath(locale, '/blog')}`},
+    {name: t(messages, 'breadcrumbs.home'), url: `${SITE_URL}${localizedPath(locale, '/')}`},
+    {name: t(messages, 'breadcrumbs.blog'), url: `${SITE_URL}${localizedPath(locale, '/blog')}`},
   ]
 
   // Blog listing JSON-LD — helps Google understand the page as a Blog entity.
   const blogSchema = generateBlogListingSchema({
     posts: safePostsList,
     url: `${SITE_URL}${localizedPath(locale, '/blog')}`,
-    name: 'Blog',
-    description: 'Articles, guides, and deep-dives on modern web development and publishing.',
+    name: t(messages, 'blog.title'),
+    description: t(messages, 'blog.description'),
     locale,
   })
 
@@ -79,20 +82,20 @@ export default async function BlogPage({params}) {
       <Container>
         <Breadcrumbs
           items={[
-            {name: 'Home', href: localizedPath(locale, '/')},
-            {name: 'Blog'},
+            {name: t(messages, 'breadcrumbs.home'), href: localizedPath(locale, '/')},
+            {name: t(messages, 'breadcrumbs.blog')},
           ]}
         />
 
         <div className="mb-10 text-center">
-          <h1 className="text-4xl font-bold text-slate-900 mb-3">Blog</h1>
+          <h1 className="text-4xl font-bold text-slate-900 mb-3">{t(messages, 'blog.title')}</h1>
           <p className="text-slate-500 text-lg max-w-xl mx-auto">
-            Articles, guides, and deep-dives on modern web development and publishing.
+            {t(messages, 'blog.description')}
           </p>
         </div>
 
         {/*
-          CategoryFilter is a client component that:
+          BlogCategoryFilter is a client component that:
           1. Renders category chip buttons
           2. Reads ?category= from the URL via useSearchParams()
           3. Filters the posts array client-side (no server round-trip)
@@ -107,7 +110,7 @@ export default async function BlogPage({params}) {
             ))}
           </div>
         }>
-          <CategoryFilter
+          <BlogCategoryFilter
             posts={safePostsList}
             categories={safeCategories}
             locale={locale}

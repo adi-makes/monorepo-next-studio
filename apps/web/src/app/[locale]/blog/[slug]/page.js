@@ -1,7 +1,7 @@
 // =============================================================================
 // Blog post — /[locale]/blog/[slug]
-// Full article page: QuickAnswer → KeyTakeaways → ToC → body → FAQ → AuthorCard
-// → RelatedPosts. Old slugs automatically 301-redirect to the current slug.
+// Full article page: quick answer, key takeaways, ToC, body, FAQ, author card,
+// and related posts. Old slugs automatically 301-redirect to the current slug.
 // Metadata and JSON-LD schema inherit: Site Settings → Category → Post.
 // =============================================================================
 
@@ -12,49 +12,61 @@ import {
   POST_BY_SLUG_QUERY,
   POST_BY_OLD_SLUG_QUERY,
   POST_SLUGS_QUERY,
+  POST_TRANSLATIONS_QUERY,
   RELATED_POSTS_QUERY,
   SITE_SETTINGS_QUERY,
 } from '@/sanity/queries'
 import {buildMetadata} from '@/seo'
+import {buildBlogPostAlternates} from '@/seo/hreflang'
 import {resolveAiSeo, resolveFaq} from '@/seo/resolve'
-import {buildPostSchemas} from '@/schema'
+import {buildPostSchemas} from '@/seo/schema'
 import {imageUrl} from '@/sanity/lib/image'
 import {extractHeadings} from '@/utils/portable-text'
 import {formatDate, isoDate} from '@/utils/format'
 import {localizedPath} from '@/i18n/routing'
 import {SITE_URL} from '@/constants/site'
+import {getMessages, t} from '@/messages'
 
-import PostBody from '@/components/blog/PostBody'
-import TableOfContents from '@/components/blog/TableOfContents'
-import QuickAnswer from '@/components/blog/QuickAnswer'
-import KeyTakeaways from '@/components/blog/KeyTakeaways'
-import RelatedPosts from '@/components/blog/RelatedPosts'
-import AuthorCard from '@/components/blog/AuthorCard'
+import BlogPostBody from '@/components/blog/BlogPostBody'
+import BlogTableOfContents from '@/components/blog/BlogTableOfContents'
+import BlogQuickAnswer from '@/components/blog/BlogQuickAnswer'
+import BlogKeyTakeaways from '@/components/blog/BlogKeyTakeaways'
+import BlogRelatedPosts from '@/components/blog/BlogRelatedPosts'
+import BlogAuthorCard from '@/components/blog/BlogAuthorCard'
 import FAQSection from '@/components/shared/FAQSection'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
 import JsonLd from '@/components/shared/JsonLd'
 
 export async function generateStaticParams() {
   const slugs = (await sanityFetch({query: POST_SLUGS_QUERY, tags: ['blogPost']})) || []
-  return slugs.map((p) => ({slug: p.slug}))
+  return slugs.map((p) => ({locale: p.locale, slug: p.slug}))
 }
 
-async function loadPost(slug) {
+async function loadPost(slug, locale) {
   const [settings, post] = await Promise.all([
     sanityFetch({query: SITE_SETTINGS_QUERY, tags: ['siteSettings']}),
-    sanityFetch({query: POST_BY_SLUG_QUERY, params: {slug}, tags: ['blogPost', 'author', 'category']}),
+    sanityFetch({query: POST_BY_SLUG_QUERY, params: {slug, locale}, tags: ['blogPost', 'author', 'category']}),
   ])
   return {settings: settings || {}, post}
 }
 
 export async function generateMetadata({params}) {
   const {locale, slug} = await params
-  const {settings, post} = await loadPost(slug)
+  const {settings, post} = await loadPost(slug, locale)
   if (!post) return {}
+  const translations = post.translationGroup
+    ? (await sanityFetch({
+        query: POST_TRANSLATIONS_QUERY,
+        params: {translationGroup: post.translationGroup},
+        tags: ['blogPost'],
+      })) || []
+    : [{locale, slug}]
+
   return buildMetadata({
     settings,
     category: post.category,
     doc: post,
+    languageAlternates: buildBlogPostAlternates(translations),
     path: `/blog/${slug}`,
     locale,
     type: 'article',
@@ -63,10 +75,11 @@ export async function generateMetadata({params}) {
 
 export default async function BlogPostPage({params}) {
   const {locale, slug} = await params
-  const {settings, post} = await loadPost(slug)
+  const {settings, post} = await loadPost(slug, locale)
+  const messages = getMessages(locale)
 
   if (!post) {
-    const moved = await sanityFetch({query: POST_BY_OLD_SLUG_QUERY, params: {slug}, tags: ['blogPost']})
+    const moved = await sanityFetch({query: POST_BY_OLD_SLUG_QUERY, params: {slug, locale}, tags: ['blogPost']})
     if (moved?.slug) {
       const destination = localizedPath(locale, `/blog/${moved.slug}`)
       if (moved.permanent !== false) permanentRedirect(destination)
@@ -84,15 +97,15 @@ export default async function BlogPostPage({params}) {
     related =
       (await sanityFetch({
         query: RELATED_POSTS_QUERY,
-        params: {id: post._id, categoryId: post.category._id},
+        params: {id: post._id, categoryId: post.category._id, locale},
         tags: ['blogPost', 'author', 'category'],
       })) || []
   }
 
   const url = `${SITE_URL}${localizedPath(locale, `/blog/${slug}`)}`
   const breadcrumbs = [
-    {name: 'Home', url: `${SITE_URL}${localizedPath(locale, '/')}`},
-    {name: 'Blog', url: `${SITE_URL}${localizedPath(locale, '/blog')}`},
+    {name: t(messages, 'breadcrumbs.home'), url: `${SITE_URL}${localizedPath(locale, '/')}`},
+    {name: t(messages, 'breadcrumbs.blog'), url: `${SITE_URL}${localizedPath(locale, '/blog')}`},
     ...(post.category
       ? [{name: post.category.name, url: `${SITE_URL}${localizedPath(locale, `/blog/category/${post.category.slug}`)}`}]
       : []),
@@ -129,8 +142,8 @@ export default async function BlogPostPage({params}) {
         <article className="min-w-0">
           <Breadcrumbs
             items={[
-              {name: 'Home', href: localizedPath(locale, '/')},
-              {name: 'Blog', href: localizedPath(locale, '/blog')},
+              {name: t(messages, 'breadcrumbs.home'), href: localizedPath(locale, '/')},
+              {name: t(messages, 'breadcrumbs.blog'), href: localizedPath(locale, '/blog')},
               ...(post.category
                 ? [{name: post.category.name, href: localizedPath(locale, `/blog/category/${post.category.slug}`)}]
                 : []),
@@ -144,7 +157,7 @@ export default async function BlogPostPage({params}) {
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-2 mb-3">{post.title}</h1>
 
           <div className="flex items-center gap-3 mb-8">
-            {post.author ? <AuthorCard author={post.author} compact locale={locale} /> : null}
+            {post.author ? <BlogAuthorCard author={post.author} compact locale={locale} /> : null}
             {post.publishedAt ? (
               <time className="text-slate-600 text-sm" dateTime={isoDate(post.publishedAt)}>
                 {formatDate(post.publishedAt)}
@@ -169,20 +182,20 @@ export default async function BlogPostPage({params}) {
             </div>
           ) : null}
 
-          {aiSeo.quickAnswer ? <QuickAnswer text={aiSeo.quickAnswer} /> : null}
-          {aiSeo.keyTakeaways?.length ? <KeyTakeaways items={aiSeo.keyTakeaways} /> : null}
+          {aiSeo.quickAnswer ? <BlogQuickAnswer text={aiSeo.quickAnswer} /> : null}
+          {aiSeo.keyTakeaways?.length ? <BlogKeyTakeaways items={aiSeo.keyTakeaways} locale={locale} /> : null}
 
-          <PostBody body={post.body} locale={locale} />
+          <BlogPostBody body={post.body} locale={locale} />
 
-          {faqs.length ? <FAQSection heading="Frequently Asked Questions" faqs={faqs} className="!py-10" /> : null}
+          {faqs.length ? <FAQSection heading={t(messages, 'faq.title')} faqs={faqs} locale={locale} className="!py-10" /> : null}
 
-          <RelatedPosts posts={related} locale={locale} />
+          <BlogRelatedPosts posts={related} locale={locale} />
         </article>
 
         {headings.length ? (
           <aside className="hidden lg:block">
             <div className="sticky top-24">
-              <TableOfContents headings={headings} />
+              <BlogTableOfContents headings={headings} locale={locale} />
             </div>
           </aside>
         ) : null}

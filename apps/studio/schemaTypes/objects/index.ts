@@ -6,7 +6,6 @@ import {imageWithMeta} from './imageWithMeta'
 import {link} from './link'
 import {socialDefaults} from './socialDefaults'
 import {analyticsConfig} from './analyticsConfig'
-import {searchIndexSettings} from './searchIndexSettings'
 import {redirectSettings} from './redirectSettings'
 import {portableText} from './portableText'
 
@@ -20,7 +19,6 @@ export const objects = [
   link,
   socialDefaults,
   analyticsConfig,
-  searchIndexSettings,
   redirectSettings,
   portableText,
 ]

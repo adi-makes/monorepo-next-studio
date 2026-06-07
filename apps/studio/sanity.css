@@ -262,6 +262,88 @@
   color: var(--ds-brand);
 }
 
+/* ---- Translation panel --------------------------------------------------- */
+.ds-translation__body {
+  padding: 12px;
+}
+.ds-translation__help {
+  margin: 0 0 12px;
+  color: var(--ds-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ds-translation__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ds-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: 1px solid var(--ds-line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ds-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.ds-button:hover {
+  border-color: var(--ds-brand);
+}
+.ds-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.ds-button--primary {
+  margin-top: 10px;
+  background: var(--ds-brand);
+  border-color: var(--ds-brand);
+  color: #fff;
+}
+.ds-translation__select {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ds-muted);
+}
+.ds-translation__select select {
+  min-height: 32px;
+  border: 1px solid var(--ds-line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ds-ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 8px;
+}
+.ds-translation__textarea {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  border: 1px solid var(--ds-line);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ds-ink);
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+  padding: 10px;
+}
+.ds-translation__textarea:focus,
+.ds-translation__select select:focus {
+  border-color: var(--ds-brand);
+  outline: 2px solid var(--ds-brand-weak);
+}
+
 /* ---- Light Studio affordances ------------------------------------------- */
 [data-ui='TabList'] {
   gap: 2px;

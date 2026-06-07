@@ -1,18 +1,18 @@
 // =============================================================================
-// AuthorCard — author byline used inline on blog posts and on the author page.
+// BlogAuthorCard — author byline used inline on blog posts and author pages.
 //
 // compact=true  → small inline byline (post header): avatar + linked name + role
 // compact=false → full bio card (author profile page): photo, rich bio, socials
 //
 // The author's name is always a clickable link to their author page.
-// bio is Portable Text (rich text) — rendered with PostBody.
+// bio is Portable Text (rich text) and is rendered with BlogPostBody.
 // =============================================================================
 
 import Image from 'next/image'
 import Link from 'next/link'
 import {imageUrl} from '@/sanity/lib/image'
 import {localizedPath} from '@/i18n/routing'
-import PostBody from './PostBody'
+import BlogPostBody from './BlogPostBody'
 
 /**
  * @param {{
@@ -21,7 +21,7 @@ import PostBody from './PostBody'
  *   locale?: string
  * }} props
  */
-export default function AuthorCard({author, compact = false, locale = 'en'}) {
+export default function BlogAuthorCard({author, compact = false, locale = 'en'}) {
   if (!author) return null
 
   const avatarSize = compact ? 96 : 320
@@ -80,7 +80,7 @@ export default function AuthorCard({author, compact = false, locale = 'en'}) {
         {/* Full bio (Portable Text) */}
         {hasBio ? (
           <div className="mt-3 text-sm [&_p]:text-slate-600 [&_p]:leading-relaxed [&_p]:mb-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-slate-900 [&_h3]:mt-4 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:text-slate-600 [&_li]:mb-1">
-            <PostBody body={author.bio} locale={locale} />
+            <BlogPostBody body={author.bio} locale={locale} />
           </div>
         ) : null}
 

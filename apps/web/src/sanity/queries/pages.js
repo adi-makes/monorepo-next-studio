@@ -6,7 +6,7 @@ import {seoFields, aiSeoFields, schemaConfigFields} from './fragments'
 
 const landingPageSeoFields = `{
   _id, _type, title, "slug": slug.current,
-  publishedAt, updatedAt,
+  publishedAt, "updatedAt": coalesce(updatedAt, _updatedAt),
   "faq": selectedFaqs[]->{question, answer},
   "seo": seo${seoFields},
   "aiSeo": aiSeo${aiSeoFields},

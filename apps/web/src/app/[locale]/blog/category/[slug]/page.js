@@ -14,7 +14,7 @@ import {
   SITE_SETTINGS_QUERY,
 } from '@/sanity/queries'
 import {buildMetadata} from '@/seo'
-import {generateBreadcrumbSchema, generateFAQSchema} from '@/schema'
+import {generateBreadcrumbSchema, generateFAQSchema} from '@/seo/schema'
 import BlogCard from '@/components/blog/BlogCard'
 import BlogEmptyState from '@/components/blog/BlogEmptyState'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
@@ -23,24 +23,25 @@ import JsonLd from '@/components/shared/JsonLd'
 import Container from '@/components/ui/Container'
 import {SITE_URL} from '@/constants/site'
 import {localizedPath} from '@/i18n/routing'
+import {getMessages, t} from '@/messages'
 
 export async function generateStaticParams() {
   const slugs = (await sanityFetch({query: CATEGORY_SLUGS_QUERY, tags: ['category']})) || []
   return slugs.map((c) => ({slug: c.slug}))
 }
 
-async function loadCategory(slug) {
+async function loadCategory(slug, locale) {
   const [settings, category, posts] = await Promise.all([
     sanityFetch({query: SITE_SETTINGS_QUERY, tags: ['siteSettings']}),
     sanityFetch({query: CATEGORY_BY_SLUG_QUERY, params: {slug}, tags: ['category']}),
-    sanityFetch({query: POSTS_BY_CATEGORY_QUERY, params: {slug}, tags: ['blogPost', 'category']}),
+    sanityFetch({query: POSTS_BY_CATEGORY_QUERY, params: {slug, locale}, tags: ['blogPost', 'category']}),
   ])
   return {settings: settings || {}, category, posts: posts || []}
 }
 
 export async function generateMetadata({params}) {
   const {locale, slug} = await params
-  const {settings, category} = await loadCategory(slug)
+  const {settings, category} = await loadCategory(slug, locale)
   if (!category) return {}
   return buildMetadata({
     settings,
@@ -52,13 +53,14 @@ export async function generateMetadata({params}) {
 
 export default async function CategoryPage({params}) {
   const {locale, slug} = await params
-  const {category, posts} = await loadCategory(slug)
+  const {category, posts} = await loadCategory(slug, locale)
   if (!category) notFound()
+  const messages = getMessages(locale)
 
   const url = `${SITE_URL}${localizedPath(locale, `/blog/category/${slug}`)}`
   const crumbs = [
-    {name: 'Home', url: `${SITE_URL}${localizedPath(locale, '/')}`},
-    {name: 'Blog', url: `${SITE_URL}${localizedPath(locale, '/blog')}`},
+    {name: t(messages, 'breadcrumbs.home'), url: `${SITE_URL}${localizedPath(locale, '/')}`},
+    {name: t(messages, 'breadcrumbs.blog'), url: `${SITE_URL}${localizedPath(locale, '/blog')}`},
     {name: category.name, url},
   ]
   const faqs = category.faqDefaults || []
@@ -69,28 +71,28 @@ export default async function CategoryPage({params}) {
       <Container>
         <Breadcrumbs
           items={[
-            {name: 'Home', href: localizedPath(locale, '/')},
-            {name: 'Blog', href: localizedPath(locale, '/blog')},
+            {name: t(messages, 'breadcrumbs.home'), href: localizedPath(locale, '/')},
+            {name: t(messages, 'breadcrumbs.blog'), href: localizedPath(locale, '/blog')},
             {name: category.name},
           ]}
         />
 
         <div className="mb-12 max-w-2xl">
-          <p className="text-primary text-sm font-semibold uppercase tracking-widest">Category</p>
+          <p className="text-primary text-sm font-semibold uppercase tracking-widest">{t(messages, 'category.eyebrow')}</p>
           <h1 className="text-4xl font-bold text-slate-900 mt-2">{category.name}</h1>
           {category.description ? <p className="mt-3 text-slate-500 text-lg">{category.description}</p> : null}
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {posts.length === 0 ? (
-            <BlogEmptyState />
+            <BlogEmptyState locale={locale} />
           ) : (
             posts.map((post) => <BlogCard key={post._id} post={post} locale={locale} />)
           )}
         </div>
       </Container>
 
-      {faqs.length ? <FAQSection faqs={faqs} className="bg-slate-50 mt-16" /> : null}
+      {faqs.length ? <FAQSection faqs={faqs} locale={locale} className="bg-slate-50 mt-16" /> : null}
 
       <JsonLd data={schemas} />
     </main>

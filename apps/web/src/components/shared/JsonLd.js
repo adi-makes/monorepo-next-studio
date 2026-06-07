@@ -1,7 +1,7 @@
 // =============================================================================
 // JsonLd — renders structured data as <script type="application/ld+json">.
 // Pass a single schema object or an array; nulls are safely skipped.
-// Use in every page alongside the schemas from src/schema/.
+// Use in every page alongside the JSON-LD generators from src/seo/schema/.
 // =============================================================================
 
 /**

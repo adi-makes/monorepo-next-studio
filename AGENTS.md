@@ -12,11 +12,11 @@ The following structure is intentional and should be preserved:
 - Public site code in `apps/web`.
 - Sanity Studio code in `apps/studio`.
 - Core Sanity documents: `blogPost`, `category`, `author`, `faqItem`, `landingPageSeo`, `redirect`, and `siteSettings`.
-- Core Sanity objects: SEO, AI SEO, schema config, redirects, Portable Text, links, images, FAQ lists, analytics, search settings, and social defaults.
+- Core Sanity objects: SEO, AI SEO, schema config, redirects, Portable Text, links, images, FAQ lists, analytics, and social defaults.
 - Locale-first web routing under `apps/web/src/app/[locale]`.
 - Sanity data access through `apps/web/src/sanity/lib` and `apps/web/src/sanity/queries`.
 - Metadata through `apps/web/src/seo`.
-- JSON-LD through `apps/web/src/schema`.
+- JSON-LD through `apps/web/src/seo/schema`.
 
 If a project needs custom website content, add pages, components, or new schema types around this base. Do not remove or rename the boilerplate schema types unless asked explicitly.
 
@@ -40,6 +40,8 @@ If a project needs custom website content, add pages, components, or new schema 
 - Use npm only. This repo uses npm workspaces and `package-lock.json`.
 - Keep files documented with useful module-level comments where behavior is not obvious.
 - Update docs when changing setup, folder structure, env variables, or core workflows.
+- Put static UI copy in `apps/web/src/messages/<locale>/*.json` instead of hardcoding text in pages or components.
+- Blog content localization is document-level in Sanity: filter `blogPost` queries by `language`, link translated posts with `translationGroup`, create translations through the Studio `Translations` tab, and treat missing legacy `language` values as English.
 
 ## Web App Boundaries
 
@@ -51,7 +53,7 @@ Use `apps/web` for the public frontend:
 - Add blog-only components in `apps/web/src/components/blog`.
 - Add GROQ queries in `apps/web/src/sanity/queries`.
 - Add SEO behavior in `apps/web/src/seo`.
-- Add structured data in `apps/web/src/schema`.
+- Add structured data in `apps/web/src/seo/schema`.
 - Add locale behavior in `apps/web/src/i18n`.
 
 Do not fetch Sanity directly from random components. Use `sanityFetch()` and query files.

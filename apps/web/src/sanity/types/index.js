@@ -60,7 +60,7 @@
 /**
  * @typedef {Object} Author
  * Author embedded in blog posts (from `authorFields` projection).
- * No standalone author profile page — displayed via AuthorCard component only.
+ * No standalone author profile page — displayed via BlogAuthorCard component only.
  * @property {string} _id
  * @property {string} name
  * @property {string} [slug]
@@ -91,6 +91,9 @@
  * @property {string} _id
  * @property {string} title
  * @property {string} slug
+ * @property {string} [language]           - Content language; missing legacy values resolve to "en"
+ * @property {string} [translationGroup]   - Shared ID linking translations of the same post
+ * @property {string} [sourceLanguage]     - Original language used to create this translation
  * @property {string} [excerpt]
  * @property {string[]} [tags]
  * @property {boolean} [tocEnabled]
@@ -135,7 +138,6 @@
  * @property {string} [titleTemplate]      - e.g. "%s | YourBrand"
  * @property {SanityImage} [logo]
  * @property {Seo} [defaultSeo]
- * @property {AiSeo} [defaultAiSeo]
  * @property {SchemaConfig} [defaultSchemaConfig]
  * @property {Object} [socialDefaults]
  * @property {{platform:string,url:string}[]} [socialProfiles]

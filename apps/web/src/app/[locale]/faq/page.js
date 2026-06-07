@@ -10,15 +10,16 @@ import {sanityFetch} from '@/sanity/lib/fetch'
 import {LANDING_PAGE_SEO_QUERY, SITE_SETTINGS_QUERY} from '@/sanity/queries'
 import {buildMetadata} from '@/seo'
 import {resolveAiSeo, resolveFaq} from '@/seo/resolve'
-import {buildPageSchemas} from '@/schema'
+import {buildPageSchemas} from '@/seo/schema'
 import JsonLd from '@/components/shared/JsonLd'
 import FAQSection from '@/components/shared/FAQSection'
 import Breadcrumbs from '@/components/shared/Breadcrumbs'
-import QuickAnswer from '@/components/blog/QuickAnswer'
-import KeyTakeaways from '@/components/blog/KeyTakeaways'
+import BlogQuickAnswer from '@/components/blog/BlogQuickAnswer'
+import BlogKeyTakeaways from '@/components/blog/BlogKeyTakeaways'
 import Container from '@/components/ui/Container'
 import {SITE_URL} from '@/constants/site'
 import {localizedPath} from '@/i18n/routing'
+import {getMessages, t} from '@/messages'
 
 async function loadFaqPage() {
   const [settings, pageSeo] = await Promise.all([
@@ -42,6 +43,7 @@ export async function generateMetadata({params}) {
 export default async function FaqPage({params}) {
   const {locale} = await params
   const {settings, pageSeo} = await loadFaqPage()
+  const messages = getMessages(locale)
 
   const aiSeo = resolveAiSeo({doc: pageSeo})
 
@@ -50,8 +52,8 @@ export default async function FaqPage({params}) {
 
   const url = `${SITE_URL}${localizedPath(locale, '/faq')}`
   const breadcrumbs = [
-    {name: 'Home', url: `${SITE_URL}${localizedPath(locale, '/')}`},
-    {name: 'FAQ', url},
+    {name: t(messages, 'breadcrumbs.home'), url: `${SITE_URL}${localizedPath(locale, '/')}`},
+    {name: t(messages, 'breadcrumbs.faq'), url},
   ]
 
   const schemas = buildPageSchemas({page: pageSeo, url, settings, faqs, breadcrumbs})
@@ -61,33 +63,34 @@ export default async function FaqPage({params}) {
       <Container className="py-14">
         <Breadcrumbs
           items={[
-            {name: 'Home', href: localizedPath(locale, '/')},
-            {name: 'FAQ'},
+            {name: t(messages, 'breadcrumbs.home'), href: localizedPath(locale, '/')},
+            {name: t(messages, 'breadcrumbs.faq')},
           ]}
         />
 
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
-            <span className="text-primary text-sm font-semibold uppercase tracking-widest">FAQ</span>
+            <span className="text-primary text-sm font-semibold uppercase tracking-widest">{t(messages, 'faq.eyebrow')}</span>
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-2">
-              {pageSeo?.title || 'Frequently Asked Questions'}
+              {pageSeo?.title || t(messages, 'faq.title')}
             </h1>
             {pageSeo?.seo?.metaDescription ? (
               <p className="mt-3 text-slate-500 text-lg">{pageSeo.seo.metaDescription}</p>
             ) : null}
           </div>
 
-          {aiSeo.quickAnswer ? <QuickAnswer text={aiSeo.quickAnswer} /> : null}
-          {aiSeo.keyTakeaways?.length ? <KeyTakeaways items={aiSeo.keyTakeaways} /> : null}
+          {aiSeo.quickAnswer ? <BlogQuickAnswer text={aiSeo.quickAnswer} /> : null}
+          {aiSeo.keyTakeaways?.length ? <BlogKeyTakeaways items={aiSeo.keyTakeaways} locale={locale} /> : null}
 
           {faqs.length ? (
             <FAQSection
               heading=""
               faqs={faqs}
+              locale={locale}
               className="!py-0"
             />
           ) : (
-            <p className="text-center text-slate-400 py-12">No FAQ items found.</p>
+            <p className="text-center text-slate-400 py-12">{t(messages, 'faq.empty')}</p>
           )}
         </div>
       </Container>

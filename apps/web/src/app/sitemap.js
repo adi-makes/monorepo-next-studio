@@ -37,7 +37,12 @@ export default async function sitemap() {
   // add('/contact')
 
   // ── Dynamic Sanity content ────────────────────────────────────────────────
-  for (const p of posts || []) add(`/blog/${p.slug}`)
+  for (const p of posts || []) {
+    entries.push({
+      url: `${SITE_URL}${localizedPath(p.locale, `/blog/${p.slug}`)}`,
+      lastModified: now,
+    })
+  }
   for (const c of categories || []) add(`/blog/category/${c.slug}`)
   for (const a of authors || []) add(`/author/${a.slug}`)
 

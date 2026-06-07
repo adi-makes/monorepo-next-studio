@@ -18,12 +18,20 @@ import {imageUrl} from '@/sanity/lib/image'
  * Used by every generateMetadata() — there is no hardcoded metadata in pages.
  *
  * @param {{
- *   settings?:any, category?:any, doc?:any,
+ *   settings?:any, category?:any, doc?:any, languageAlternates?:Record<string,string>,
  *   path?:string, locale?:string, type?:'website'|'article'
  * }} opts
  * @returns {import('next').Metadata}
  */
-export function buildMetadata({settings = {}, category = {}, doc = {}, path = '/', locale = 'en', type = 'website'} = {}) {
+export function buildMetadata({
+  settings = {},
+  category = {},
+  doc = {},
+  languageAlternates,
+  path = '/',
+  locale = 'en',
+  type = 'website',
+} = {}) {
   const seo = resolveSeo({settings, category, doc})
   const siteName = settings.name || SITE_NAME
   const template = settings.titleTemplate || '%s'
@@ -47,7 +55,7 @@ export function buildMetadata({settings = {}, category = {}, doc = {}, path = '/
     title,
     description,
     metadataBase: new URL(SITE_URL),
-    alternates: {canonical, languages: buildLanguageAlternates(path)},
+    alternates: {canonical, languages: languageAlternates || buildLanguageAlternates(path)},
     robots: buildRobots(seo.robots),
     openGraph: {
       type: type === 'article' ? 'article' : 'website',

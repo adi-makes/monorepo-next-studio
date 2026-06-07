@@ -3,12 +3,14 @@
 // the CMS provides takeaway items.
 
 import {Check} from 'lucide-react'
+import {getMessages, t} from '@/messages'
 
-export default function KeyTakeaways({items = []}) {
+export default function BlogKeyTakeaways({items = [], locale = 'en'}) {
   if (!items?.length) return null
+  const messages = getMessages(locale)
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 my-8">
-      <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-3">Key Takeaways</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-3">{t(messages, 'aiSeo.keyTakeaways')}</h2>
       <ul className="space-y-2">
         {items.map((item, i) => (
           <li key={i} className="flex gap-2 text-slate-700">

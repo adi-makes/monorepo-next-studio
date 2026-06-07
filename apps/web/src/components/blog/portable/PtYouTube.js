@@ -6,7 +6,7 @@
 import {getYouTubeId} from '@/utils/embed'
 import LiteYouTube from './LiteYouTube'
 
-export default function PtYouTube({value}) {
+export default function PtYouTube({value, locale = 'en'}) {
   if (!value?.url) return null
   const id = getYouTubeId(value.url)
   if (!id) return null
@@ -14,7 +14,7 @@ export default function PtYouTube({value}) {
   return (
     <figure className="my-8">
       <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-900">
-        <LiteYouTube id={id} title={value.title} url={value.url} />
+        <LiteYouTube id={id} title={value.title} url={value.url} locale={locale} />
       </div>
       {value.title ? <figcaption className="text-center text-sm text-slate-600 mt-2">{value.title}</figcaption> : null}
     </figure>

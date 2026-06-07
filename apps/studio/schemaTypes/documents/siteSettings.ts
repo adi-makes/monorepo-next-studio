@@ -3,7 +3,7 @@ import {defineType, defineField, defineArrayMember} from 'sanity'
 /**
  * Site Settings singleton — the top of the inheritance chain and the single
  * place future sites edit instead of code. Controls organisation/website
- * identity plus default SEO, AI SEO, schema, social, and analytics.
+ * identity plus default SEO, schema, social, and analytics.
  */
 export const siteSettings = defineType({
   name: 'siteSettings',
@@ -12,7 +12,6 @@ export const siteSettings = defineType({
   groups: [
     {name: 'organization', title: 'Organization', default: true},
     {name: 'seo', title: 'Default SEO'},
-    {name: 'aiSeo', title: 'Default AI SEO'},
     {name: 'schema', title: 'Default Schema'},
     {name: 'social', title: 'Social'},
     {name: 'integrations', title: 'Integrations'},
@@ -54,10 +53,9 @@ export const siteSettings = defineType({
       description: 'Your services. Automatically emitted as Service + ItemList JSON-LD on every landing page — no per-page setup needed.',
     }),
 
-    // Default SEO / AI / schema
+    // Default SEO / schema
     defineField({name: 'defaultSeo', title: 'Default SEO', type: 'seo', group: 'seo'}),
     defineField({name: 'titleTemplate', title: 'Title Template', type: 'string', group: 'seo', description: 'Use %s for the page title, e.g. "%s | YourBrand".', initialValue: '%s'}),
-    defineField({name: 'defaultAiSeo', title: 'Default AI SEO', type: 'aiSeo', group: 'aiSeo'}),
     defineField({name: 'defaultSchemaConfig', title: 'Default Schema', type: 'schemaConfig', group: 'schema'}),
 
     // Social
@@ -83,7 +81,6 @@ export const siteSettings = defineType({
 
     // Integrations
     defineField({name: 'analytics', title: 'Analytics', type: 'analyticsConfig', group: 'integrations'}),
-    defineField({name: 'search', title: 'Search', type: 'searchIndexSettings', group: 'integrations'}),
   ],
   preview: {prepare: () => ({title: 'Site Settings'})},
 })

@@ -1,7 +1,7 @@
 // =============================================================================
 // SpeakableSpecification schema — tells voice assistants (Google Assistant,
 // Alexa) which CSS selector on the page contains the most speakable content.
-// The `.ds-speakable` element is rendered by QuickAnswer.js (screen-reader-only
+// The `.ds-speakable` element is rendered by BlogQuickAnswer.js (screen-reader-only
 // invisible div). Auto-emitted when aiSeo.quickAnswer is set on a document.
 // =============================================================================
 

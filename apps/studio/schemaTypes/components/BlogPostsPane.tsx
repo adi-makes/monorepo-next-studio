@@ -14,12 +14,47 @@ const STATUS_OPTIONS = [
   {label: 'Archived', value: 'archived'},
 ]
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: 'EN',
+  fr: 'FR',
+  de: 'DE',
+  ar: 'AR',
+}
+
+const formatUpdatedDate = (value: string | null) =>
+  value
+    ? new Intl.DateTimeFormat('en', {day: '2-digit', month: 'short', year: 'numeric'}).format(new Date(value))
+    : null
+
 type Post = {
   _id: string
   title: string | null
+  language: string | null
   status: string | null
   publishedAt: string | null
-  category: {name: string} | null
+  _updatedAt: string | null
+  author: {name: string} | null
+}
+
+const canonicalId = (id: string) => id.replace(/^drafts\./, '')
+const isDraft = (id: string) => id.startsWith('drafts.')
+
+function mergeDrafts(posts: Post[]): Post[] {
+  const byId = new Map<string, Post>()
+
+  for (const post of posts) {
+    const id = canonicalId(post._id)
+    const current = byId.get(id)
+    if (!current || (isDraft(post._id) && !isDraft(current._id))) {
+      byId.set(id, post)
+    }
+  }
+
+  return Array.from(byId.values()).sort((a, b) => {
+    const dateA = new Date(a.publishedAt || a._updatedAt || 0).getTime()
+    const dateB = new Date(b.publishedAt || b._updatedAt || 0).getTime()
+    return dateB - dateA
+  })
 }
 
 /**
@@ -49,11 +84,19 @@ export function BlogPostsPane() {
     const condition = filter ? '_type == "blogPost" && status == $s' : '_type == "blogPost"'
     client
       .fetch<Post[]>(
-        `*[${condition}] | order(publishedAt desc) {_id, title, status, publishedAt, category->{name}}`,
+        `*[${condition}] | order(publishedAt desc) {
+          _id,
+          title,
+          language,
+          status,
+          publishedAt,
+          _updatedAt,
+          author->{name}
+        }`,
         {s: filter},
       )
       .then((data) => {
-        setPosts(data)
+        setPosts(mergeDrafts(data))
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -172,7 +215,14 @@ export function BlogPostsPane() {
                   {post.title ?? 'Untitled'}
                 </div>
                 <div style={{fontSize: 11, opacity: 0.5}}>
-                  {[post.category?.name, post.status ?? 'no status'].filter(Boolean).join(' · ')}
+                  {[
+                    LANGUAGE_LABELS[post.language ?? 'en'] ?? 'EN',
+                    post.author?.name,
+                    formatUpdatedDate(post._updatedAt),
+                    post.status ?? 'no status',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </div>
               </div>
             </ChildLink>

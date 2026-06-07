@@ -7,17 +7,19 @@
 import {useState} from 'react'
 import {Play} from 'lucide-react'
 import {youTubeEmbedUrl} from '@/utils/embed'
+import {getMessages, t} from '@/messages'
 
-export default function LiteYouTube({id, title, url}) {
+export default function LiteYouTube({id, title, url, locale = 'en'}) {
   const [loaded, setLoaded] = useState(false)
-  const label = title ? `Play video: ${title}` : 'Play YouTube video'
+  const messages = getMessages(locale)
+  const label = title ? t(messages, 'video.playWithTitle', {title}) : t(messages, 'video.play')
   const thumbnail = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
 
   if (loaded) {
     return (
       <iframe
         src={`${youTubeEmbedUrl(url)}?autoplay=1`}
-        title={title || 'YouTube video'}
+        title={title || t(messages, 'video.title')}
         className="absolute inset-0 h-full w-full"
         loading="lazy"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

@@ -87,7 +87,8 @@ export const landingPageSeo = defineType({
       title: 'Updated Date',
       type: 'datetime',
       group: 'settings',
-      initialValue: () => new Date().toISOString(),
+      hidden: true,
+      description: 'Deprecated manual field. The site now uses Sanity system _updatedAt automatically.',
     }),
   ],
 

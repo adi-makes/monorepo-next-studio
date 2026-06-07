@@ -38,9 +38,9 @@ monorepo/
     |      |-- components/    UI, blog, and shared components
     |      |-- constants/     Site fallbacks such as SITE_URL
     |      |-- i18n/          Locale config and URL helpers
+    |      |-- messages/      JSON UI copy bundles per locale
     |      |-- sanity/        Sanity client, fetch helper, queries, types
-    |      |-- schema/        JSON-LD generators
-    |      |-- seo/           Metadata and SEO resolution
+    |      |-- seo/           Metadata, SEO resolution, and JSON-LD generators
     |      `-- utils/         Portable text, formatting, embeds, hrefs
     `-- studio/               Sanity Studio
         |-- .env.example      Public template for Studio env vars
@@ -122,12 +122,12 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 - `src/proxy.js` handles locale prefixing and redirect rules.
 - `src/sanity/lib/*` is the Sanity client and fetch layer.
 - `src/sanity/queries/*` contains the GROQ queries.
-- `src/schema/*` builds JSON-LD.
-- `src/seo/*` resolves metadata, hreflang, robots, and inherited SEO fields.
+- `src/seo/*` resolves metadata, hreflang, robots, inherited SEO fields, and JSON-LD schema output.
 - `src/components/shared/*` holds shared layout components such as navbar, footer, breadcrumbs, JSON-LD, and FAQ blocks.
 - `src/components/blog/*` holds blog-specific presentation.
 - `src/components/blog/portable/*` renders Portable Text blocks.
 - `src/i18n/*` defines supported locales and route helpers.
+- `src/messages/<locale>/*.json` stores UI text by shared/common and page-specific bundles.
 
 ### Studio
 
@@ -167,6 +167,9 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 - All public routes live under `/[locale]`.
 - The proxy redirects bare paths to the default locale.
 - Add or remove supported locales in `src/i18n/config.js`.
+- Static UI copy lives in `src/messages/<locale>/*.json`.
+- Blog content language is selected from Sanity with `blogPost.language`; translated blog documents are linked by `translationGroup`.
+- Editors create translated blog drafts from the blog post `Translations` tab by copying source JSON, pasting translated JSON, and selecting the target language.
 
 ## Commands
 
@@ -209,7 +212,7 @@ After deployment, add the production site URL to Sanity CORS origins.
 - Update site branding and fallback constants in `apps/web/src/constants/site.js`.
 - Update locale behavior in `apps/web/src/i18n/config.js` and `apps/web/src/i18n/routing.js`.
 - Update SEO defaults in `apps/web/src/seo/*`.
-- Update JSON-LD generators in `apps/web/src/schema/*`.
+- Update JSON-LD generators in `apps/web/src/seo/schema/*`.
 - Add a CMS document in `apps/studio/schemaTypes/documents/*`.
 - Add a reusable object in `apps/studio/schemaTypes/objects/*`.
 - Change Studio navigation in `apps/studio/structure/index.ts`.

@@ -275,6 +275,73 @@ At minimum, create or verify:
 - At least one `author` before creating blog posts.
 - At least one `category` before creating blog posts.
 
+## Localizing Interface Text
+
+Static UI copy belongs in the message bundle, not directly inside page or component JSX.
+
+Current English message folder:
+
+```text
+apps/web/src/messages/en/
+|-- common.json
+|-- home.json
+|-- blog.json
+|-- faq.json
+|-- category.json
+|-- author.json
+`-- not-found.json
+```
+
+Use `common.json` for shared UI such as navbar, footer, breadcrumbs, buttons/shared labels, draft mode, and embeds. Use page-specific files for page and route copy.
+
+Message helper:
+
+```text
+apps/web/src/messages/index.js
+```
+
+To add another locale later:
+
+1. Add the locale code to `LOCALES` in `apps/web/src/i18n/config.js`.
+2. Create `apps/web/src/messages/<locale>/`.
+3. Copy every JSON file from `messages/en/` into the new locale folder.
+4. Translate every value while keeping the same keys.
+5. Import the new JSON files in `apps/web/src/messages/index.js`.
+6. Merge the imported files under the locale code in `MESSAGES`.
+7. Add a display label in `LOCALE_LABELS`.
+8. Add the locale to `RTL_LOCALES` if it is right-to-left.
+
+CMS content such as blog titles, FAQ questions, FAQ answers, author bios, category names, and Portable Text body content still comes from Sanity. Blog posts use document-level localization: each `blogPost` has a `language` field, and translated versions are separate `blogPost` documents linked by the same `translationGroup`. Existing posts without a language are treated as English by the frontend with `coalesce(language, "en")`.
+
+## Creating Translated Blog Posts
+
+Blog translations are managed in Sanity Studio as separate `blogPost` documents. Do not translate blog content in `apps/web/src/messages`; that folder is only for static interface text.
+
+Use this workflow:
+
+1. Create and save the English source blog post normally.
+2. Open the source post's `Translations` tab.
+3. Click `Copy source JSON`.
+4. Translate only the text values outside Sanity. Keep the JSON keys, arrays, Portable Text `_type`, `_key`, mark definitions, references, and image objects intact.
+5. Select the target language in the `Target language` dropdown.
+6. Paste the translated JSON.
+7. Click `Create translated draft`.
+8. Open the generated draft, review it, then publish when ready.
+
+The translation tool automatically:
+
+- Creates or replaces one deterministic draft per source post and target language.
+- Sets the new post's `language` field to the selected target language.
+- Links the translated document to the source through the hidden `translationGroup`.
+- Sets `sourceLanguage` and `sourceDocument`.
+- Copies shared fields such as featured image, author, category, publish schedule, schema config, and visibility.
+- Generates a locale-specific slug from the translated title, such as `my-translated-title-fr`.
+- Adds a numeric suffix if the generated slug already exists.
+
+The selected language is what the frontend uses for localized blog routing. For example, `/fr/blog/example` only finds a post whose `language` is `fr` and whose slug is `example`. The Studio blog list also shows the language code beside each post, so translated drafts should display as `FR`, `DE`, `AR`, and so on.
+
+Do not manually duplicate a blog post to translate it. Use the `Translations` tab so the link fields and slug rules stay consistent.
+
 ## Build Locally
 
 From the root:

@@ -1,5 +1,5 @@
 // =============================================================================
-// PostBody — renders Sanity Portable Text with full custom block/mark support.
+// BlogPostBody — renders Sanity Portable Text with full custom block/mark support.
 // Supports: headings, paragraphs, blockquotes, lists, inline code, internal
 // and external links, images, tables, callouts, YouTube embeds, CTAs, FAQs,
 // dividers, and syntax-highlighted code blocks.
@@ -78,7 +78,7 @@ function buildComponents(locale) {
       image: PtImage,
       table: PtTable,
       callout: PtCallout,
-      youtube: PtYouTube,
+      youtube: ({value}) => <PtYouTube value={value} locale={locale} />,
       ctaBlock: ({value}) => <PtCta value={value} locale={locale} />,
       faqBlock: PtFaq,
       divider: PtDivider,
@@ -91,7 +91,7 @@ function buildComponents(locale) {
  * Renders a Portable Text body with full custom block & mark support.
  * @param {{body:any[], locale?:string, className?:string}} props
  */
-export default function PostBody({body, locale = 'en', className = ''}) {
+export default function BlogPostBody({body, locale = 'en', className = ''}) {
   if (!body?.length) return null
   return (
     <div className={`ds-prose max-w-none ${className}`}>

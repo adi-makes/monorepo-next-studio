@@ -22,3 +22,20 @@ export function buildLanguageAlternates(path = '/') {
   languages['x-default'] = `${SITE_URL}${localizedPath(LOCALES[0], path)}`
   return languages
 }
+
+/**
+ * Build hreflang alternates from actual translated Sanity documents.
+ * @param {{locale:string, slug:string}[]} translations
+ * @returns {Record<string,string>}
+ */
+export function buildBlogPostAlternates(translations = []) {
+  /** @type {Record<string,string>} */
+  const languages = {}
+  for (const translation of translations) {
+    if (!translation?.locale || !translation?.slug) continue
+    languages[translation.locale] = `${SITE_URL}${localizedPath(translation.locale, `/blog/${translation.slug}`)}`
+  }
+  const fallbackLocale = LOCALES[0]
+  if (languages[fallbackLocale]) languages['x-default'] = languages[fallbackLocale]
+  return languages
+}

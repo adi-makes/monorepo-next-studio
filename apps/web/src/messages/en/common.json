@@ -1,0 +1,35 @@
+{
+  "site": {
+    "fallbackBrand": "YourBrand",
+    "skipToContent": "Skip to main content"
+  },
+  "nav": {
+    "mainLabel": "Main navigation",
+    "blog": "Blog",
+    "faq": "FAQ",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu"
+  },
+  "footer": {
+    "navigate": "Navigate",
+    "rights": "All rights reserved."
+  },
+  "breadcrumbs": {
+    "label": "Breadcrumb",
+    "home": "Home",
+    "blog": "Blog",
+    "faq": "FAQ"
+  },
+  "aiSeo": {
+    "keyTakeaways": "Key Takeaways"
+  },
+  "draftMode": {
+    "banner": "Draft preview mode",
+    "exit": "exit preview"
+  },
+  "video": {
+    "play": "Play YouTube video",
+    "playWithTitle": "Play video: {title}",
+    "title": "YouTube video"
+  }
+}
